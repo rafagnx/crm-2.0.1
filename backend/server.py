@@ -668,6 +668,9 @@ async def create_lead(lead_data: LeadCreate, current_user: User = Depends(get_cu
     # Process automation rules
     await process_automation_rules(lead.id, lead.status, current_user.id)
     
+    # Trigger webhooks
+    await trigger_webhooks(WebhookEvent.LEAD_CREATED, lead.dict(), current_user.id)
+    
     return lead
 
 @api_router.get("/leads", response_model=List[Lead])
