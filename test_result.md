@@ -164,6 +164,9 @@ backend:
         - working: true
           agent: "main"
           comment: "✅ TESTED SUCCESSFULLY: Activity logs created when leads are created and modified"
+        - working: true
+          agent: "testing"
+          comment: "✅ RE-TESTED SUCCESSFULLY: Activity tracking working correctly - lead creation, moves, and updates are properly logged with detailed activity records"
 
   - task: "Dashboard Stats API"
     implemented: true
