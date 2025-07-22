@@ -2,6 +2,74 @@
 @tailwind components;
 @tailwind utilities;
 
+/* CSS Custom Properties for Dynamic Theming */
+:root {
+  --color-primary: #3b82f6;
+  --color-secondary: #6b7280;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-background: #f8fafc;
+  --color-surface: #ffffff;
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #64748b;
+  --font-family: Inter, system-ui, sans-serif;
+  --font-size-base: 14px;
+  --border-radius: 0.5rem;
+}
+
+/* Dark mode color overrides */
+body.dark {
+  --color-background: #0f172a;
+  --color-surface: #1e293b;
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+}
+
+/* Apply theme variables to elements */
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+.theme-primary {
+  background-color: var(--color-primary);
+}
+
+.theme-secondary {
+  background-color: var(--color-secondary);
+}
+
+.theme-success {
+  background-color: var(--color-success);
+}
+
+.theme-warning {
+  background-color: var(--color-warning);
+}
+
+.theme-danger {
+  background-color: var(--color-danger);
+}
+
+.theme-surface {
+  background-color: var(--color-surface);
+}
+
+.theme-text-primary {
+  color: var(--color-text-primary);
+}
+
+.theme-text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.theme-border-radius {
+  border-radius: var(--border-radius);
+}
+
 .App {
   text-align: left;
 }
