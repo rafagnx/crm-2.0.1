@@ -706,7 +706,7 @@ async def get_leads(
     if priority:
         query["priority"] = priority
     
-    leads = await db.leads.find(query).sort("position", 1).to_list(1000)
+    leads = await db.leads.find(query, {"_id": 0}).sort("position", 1).to_list(1000)
     return [Lead(**lead) for lead in leads]
 
 @api_router.get("/leads/{lead_id}", response_model=Lead)
