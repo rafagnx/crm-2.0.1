@@ -1076,7 +1076,7 @@ async def create_webhook(webhook_data: WebhookCreate, current_user: User = Depen
 
 @api_router.get("/webhooks", response_model=List[Webhook])
 async def get_webhooks(current_user: User = Depends(get_current_user)):
-    webhooks = await db.webhooks.find({"user_id": current_user.id}).sort("created_at", -1).to_list(None)
+    webhooks = await db.webhooks.find({"user_id": current_user.id}, {"_id": 0}).sort("created_at", -1).to_list(None)
     return [Webhook(**webhook) for webhook in webhooks]
 
 @api_router.get("/webhooks/{webhook_id}", response_model=Webhook)
