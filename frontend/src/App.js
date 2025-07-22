@@ -942,6 +942,270 @@ const KanbanBoard = () => {
   );
 };
 
+// Automations Component
+const Automations = () => {
+  const [rules, setRules] = useState([]);
+  const [showRuleForm, setShowRuleForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAutomationRules();
+  }, []);
+
+  const fetchAutomationRules = async () => {
+    try {
+      const response = await axios.get(`${API}/automation/rules`);
+      setRules(response.data);
+    } catch (error) {
+      console.error('Error fetching automation rules:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createAutomationRule = async (ruleData) => {
+    try {
+      await axios.post(`${API}/automation/rules`, ruleData);
+      fetchAutomationRules();
+      setShowRuleForm(false);
+    } catch (error) {
+      console.error('Error creating automation rule:', error);
+      throw error;
+    }
+  };
+
+  const statusOptions = [
+    { value: 'novo', label: 'Novo' },
+    { value: 'qualificado', label: 'Qualificado' },
+    { value: 'proposta', label: 'Proposta' },
+    { value: 'negociacao', label: 'Negociação' },
+    { value: 'fechado_ganho', label: 'Fechado (Ganho)' },
+    { value: 'fechado_perdido', label: 'Fechado (Perdido)' }
+  ];
+
+  const actionOptions = [
+    { value: 'schedule_follow_up', label: 'Agendar Follow-up', params: [{ key: 'days', label: 'Dias', type: 'number' }] },
+    { value: 'create_task', label: 'Criar Tarefa', params: [{ key: 'task_description', label: 'Descrição', type: 'text' }] },
+    { value: 'send_email', label: 'Enviar Email', params: [{ key: 'email_template', label: 'Template', type: 'text' }] }
+  ];
+
+  return (
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Automações</h2>
+          <p className="text-gray-600">Configure regras automáticas para seus leads</p>
+        </div>
+        <button
+          onClick={() => setShowRuleForm(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          ➕ Nova Regra
+        </button>
+      </div>
+
+      <div className="grid gap-6">
+        {loading ? (
+          <div className="bg-white rounded-lg p-6 shadow-lg">
+            <div className="animate-pulse space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-16 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow-lg">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Regras Ativas</h3>
+              {rules.length > 0 ? (
+                <div className="space-y-4">
+                  {rules.map((rule) => (
+                    <div key={rule.id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900">{rule.name}</h4>
+                          <div className="text-sm text-gray-600 mt-1">
+                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs mr-2">
+                              Quando: {statusOptions.find(s => s.value === rule.trigger_status)?.label}
+                            </span>
+                            <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
+                              Ação: {actionOptions.find(a => a.value === rule.action)?.label}
+                            </span>
+                          </div>
+                          {Object.keys(rule.action_params).length > 0 && (
+                            <div className="text-xs text-gray-500 mt-2">
+                              Parâmetros: {JSON.stringify(rule.action_params)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            rule.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {rule.is_active ? 'Ativa' : 'Inativa'}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {new Date(rule.created_at).toLocaleDateString('pt-BR')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Nenhuma regra de automação criada</p>
+                  <button
+                    onClick={() => setShowRuleForm(true)}
+                    className="mt-2 text-blue-600 hover:text-blue-700"
+                  >
+                    Criar primeira regra
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* New Rule Form Modal */}
+      {showRuleForm && (
+        <AutomationRuleForm
+          onClose={() => setShowRuleForm(false)}
+          onSubmit={createAutomationRule}
+          statusOptions={statusOptions}
+          actionOptions={actionOptions}
+        />
+      )}
+    </div>
+  );
+};
+
+// Automation Rule Form Component
+const AutomationRuleForm = ({ onClose, onSubmit, statusOptions, actionOptions }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    trigger_status: '',
+    action: '',
+    action_params: {}
+  });
+  const [loading, setLoading] = useState(false);
+
+  const selectedAction = actionOptions.find(a => a.value === formData.action);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await onSubmit(formData);
+    } catch (error) {
+      console.error('Error creating rule:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleActionParamChange = (paramKey, value) => {
+    setFormData({
+      ...formData,
+      action_params: {
+        ...formData.action_params,
+        [paramKey]: value
+      }
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-96 overflow-y-auto m-4">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-gray-900">Nova Regra de Automação</h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-xl">✕</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Regra *</label>
+            <input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Ex: Auto follow-up para leads qualificados"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Gatilho (Quando) *</label>
+            <select
+              required
+              value={formData.trigger_status}
+              onChange={(e) => setFormData({ ...formData, trigger_status: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Selecione o status que dispara a regra</option>
+              {statusOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ação *</label>
+            <select
+              required
+              value={formData.action}
+              onChange={(e) => setFormData({ ...formData, action: e.target.value, action_params: {} })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Selecione a ação a ser executada</option>
+              {actionOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Dynamic action parameters */}
+          {selectedAction && selectedAction.params && (
+            <div className="space-y-3">
+              <h4 className="font-medium text-gray-900">Parâmetros da Ação</h4>
+              {selectedAction.params.map((param) => (
+                <div key={param.key}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{param.label}</label>
+                  <input
+                    type={param.type}
+                    value={formData.action_params[param.key] || ''}
+                    onChange={(e) => handleActionParamChange(param.key, e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex justify-end space-x-3 pt-4 border-t">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {loading ? 'Criando...' : 'Criar Regra'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 // Main Dashboard Component with Navigation
 const MainDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -951,6 +1215,7 @@ const MainDashboard = () => {
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'kanban', label: 'Kanban', icon: '📋' },
     { id: 'calendar', label: 'Calendário', icon: '📅' },
+    { id: 'automations', label: 'Automações', icon: '🤖' },
   ];
 
   const renderContent = () => {
