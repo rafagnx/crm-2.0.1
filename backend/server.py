@@ -198,6 +198,102 @@ class CalendarEventCreate(BaseModel):
     end_time: datetime
     event_type: EventType
 
+# Theme System Models
+class ThemeColors(BaseModel):
+    primary: str = "#3b82f6"  # Blue
+    secondary: str = "#6b7280"  # Gray
+    success: str = "#10b981"  # Green
+    warning: str = "#f59e0b"  # Amber
+    danger: str = "#ef4444"  # Red
+    background: str = "#f8fafc"  # Slate-50
+    surface: str = "#ffffff"  # White
+    text_primary: str = "#1e293b"  # Slate-800
+    text_secondary: str = "#64748b"  # Slate-500
+
+class ThemeSettings(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    name: str = "Custom Theme"
+    colors: ThemeColors = Field(default_factory=ThemeColors)
+    logo_base64: Optional[str] = None  # Base64 encoded logo
+    font_family: str = "Inter, system-ui, sans-serif"
+    font_size_base: str = "14px"
+    border_radius: str = "0.5rem"
+    is_dark_mode: bool = False
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class ThemeCreate(BaseModel):
+    name: str = "Custom Theme"
+    colors: Optional[ThemeColors] = None
+    logo_base64: Optional[str] = None
+    font_family: Optional[str] = "Inter, system-ui, sans-serif"
+    font_size_base: Optional[str] = "14px"
+    border_radius: Optional[str] = "0.5rem"
+    is_dark_mode: Optional[bool] = False
+
+class ThemeUpdate(BaseModel):
+    name: Optional[str] = None
+    colors: Optional[ThemeColors] = None
+    logo_base64: Optional[str] = None
+    font_family: Optional[str] = None
+    font_size_base: Optional[str] = None
+    border_radius: Optional[str] = None
+    is_dark_mode: Optional[bool] = None
+
+# Webhook System Models
+class WebhookEvent(str, Enum):
+    LEAD_CREATED = "lead.created"
+    LEAD_UPDATED = "lead.updated"
+    LEAD_STATUS_CHANGED = "lead.status_changed"
+    LEAD_DELETED = "lead.deleted"
+    USER_REGISTERED = "user.registered"
+
+class Webhook(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    name: str
+    url: str
+    events: List[WebhookEvent]
+    secret: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    is_active: bool = True
+    retry_count: int = 3
+    timeout_seconds: int = 30
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    last_triggered: Optional[datetime] = None
+    total_triggers: int = 0
+    failed_triggers: int = 0
+
+class WebhookCreate(BaseModel):
+    name: str
+    url: str
+    events: List[WebhookEvent]
+    retry_count: Optional[int] = 3
+    timeout_seconds: Optional[int] = 30
+
+class WebhookUpdate(BaseModel):
+    name: Optional[str] = None
+    url: Optional[str] = None
+    events: Optional[List[WebhookEvent]] = None
+    is_active: Optional[bool] = None
+    retry_count: Optional[int] = None
+    timeout_seconds: Optional[int] = None
+
+class WebhookLog(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    webhook_id: str
+    event: WebhookEvent
+    payload: Dict
+    response_status: Optional[int] = None
+    response_body: Optional[str] = None
+    error_message: Optional[str] = None
+    attempt_count: int = 1
+    triggered_at: datetime = Field(default_factory=datetime.utcnow)
+    completed_at: Optional[datetime] = None
+    success: bool = False
+
 class KanbanColumn(BaseModel):
     status: LeadStatus
     title: str
