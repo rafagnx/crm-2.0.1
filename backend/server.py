@@ -415,6 +415,116 @@ async def process_automation_rules(lead_id: str, new_status: LeadStatus, user_id
             )
             await db.activities.insert_one(activity.dict())
 
+# Webhook helpers
+import asyncio
+import aiohttp
+import hashlib
+import hmac
+
+async def trigger_webhooks(event: WebhookEvent, payload: Dict, user_id: str):
+    """Trigger all webhooks for a specific event"""
+    webhooks = await db.webhooks.find({
+        "user_id": user_id,
+        "events": event,
+        "is_active": True
+    }).to_list(100)
+    
+    # Process webhooks in background
+    if webhooks:
+        asyncio.create_task(process_webhooks(webhooks, event, payload))
+
+async def process_webhooks(webhooks: List[Dict], event: WebhookEvent, payload: Dict):
+    """Process webhooks asynchronously"""
+    for webhook_data in webhooks:
+        webhook = Webhook(**webhook_data)
+        await send_webhook(webhook, event, payload)
+
+async def send_webhook(webhook: Webhook, event: WebhookEvent, payload: Dict):
+    """Send individual webhook with retry logic"""
+    webhook_payload = {
+        "event": event,
+        "data": payload,
+        "timestamp": datetime.utcnow().isoformat(),
+        "webhook_id": webhook.id
+    }
+    
+    # Create signature
+    signature = create_webhook_signature(webhook.secret, webhook_payload)
+    
+    headers = {
+        "Content-Type": "application/json",
+        "X-Webhook-Signature": signature,
+        "X-Webhook-Event": event,
+        "User-Agent": "CRM-Webhook/1.0"
+    }
+    
+    log_entry = WebhookLog(
+        webhook_id=webhook.id,
+        event=event,
+        payload=webhook_payload
+    )
+    
+    for attempt in range(webhook.retry_count):
+        try:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=webhook.timeout_seconds)) as session:
+                async with session.post(webhook.url, json=webhook_payload, headers=headers) as response:
+                    log_entry.response_status = response.status
+                    log_entry.response_body = await response.text()
+                    log_entry.attempt_count = attempt + 1
+                    log_entry.completed_at = datetime.utcnow()
+                    
+                    if 200 <= response.status < 300:
+                        log_entry.success = True
+                        await update_webhook_stats(webhook.id, success=True)
+                        break
+                    else:
+                        log_entry.success = False
+                        log_entry.error_message = f"HTTP {response.status}: {log_entry.response_body}"
+                        
+        except asyncio.TimeoutError:
+            log_entry.error_message = "Request timeout"
+            log_entry.attempt_count = attempt + 1
+        except Exception as e:
+            log_entry.error_message = str(e)
+            log_entry.attempt_count = attempt + 1
+            
+        # Wait before retry (exponential backoff)
+        if attempt < webhook.retry_count - 1:
+            await asyncio.sleep(2 ** attempt)
+    
+    # Save log entry
+    await db.webhook_logs.insert_one(log_entry.dict())
+    
+    # Update webhook stats if final attempt failed
+    if not log_entry.success:
+        await update_webhook_stats(webhook.id, success=False)
+
+def create_webhook_signature(secret: str, payload: Dict) -> str:
+    """Create HMAC signature for webhook verification"""
+    import json
+    payload_str = json.dumps(payload, sort_keys=True, separators=(',', ':'))
+    signature = hmac.new(
+        secret.encode('utf-8'),
+        payload_str.encode('utf-8'),
+        hashlib.sha256
+    ).hexdigest()
+    return f"sha256={signature}"
+
+async def update_webhook_stats(webhook_id: str, success: bool):
+    """Update webhook statistics"""
+    update_data = {
+        "last_triggered": datetime.utcnow(),
+        "$inc": {"total_triggers": 1}
+    }
+    
+    if not success:
+        update_data["$inc"]["failed_triggers"] = 1
+    
+    await db.webhooks.update_one(
+        {"id": webhook_id},
+        update_data
+    )
+
 # Authentication Routes
 @api_router.post("/auth/register")
 async def register(user_data: UserCreate):
