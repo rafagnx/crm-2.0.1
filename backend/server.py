@@ -502,7 +502,18 @@ async def send_webhook(webhook: Webhook, event: WebhookEvent, payload: Dict):
 def create_webhook_signature(secret: str, payload: Dict) -> str:
     """Create HMAC signature for webhook verification"""
     import json
-    payload_str = json.dumps(payload, sort_keys=True, separators=(',', ':'))
+    from bson import ObjectId
+    from datetime import datetime
+    
+    def json_serializer(obj):
+        """JSON serializer for objects not serializable by default json code"""
+        if isinstance(obj, ObjectId):
+            return str(obj)
+        elif isinstance(obj, datetime):
+            return obj.isoformat()
+        raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+    
+    payload_str = json.dumps(payload, sort_keys=True, separators=(',', ':'), default=json_serializer)
     signature = hmac.new(
         secret.encode('utf-8'),
         payload_str.encode('utf-8'),
