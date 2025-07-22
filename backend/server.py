@@ -454,9 +454,12 @@ async def trigger_webhooks(event: WebhookEvent, payload: Dict, user_id: str):
 
 async def process_webhooks(webhooks: List[Dict], event: WebhookEvent, payload: Dict):
     """Process webhooks asynchronously"""
+    # Clean payload of ObjectId objects
+    clean_payload = clean_payload_for_webhook(payload)
+    
     for webhook_data in webhooks:
         webhook = Webhook(**webhook_data)
-        await send_webhook(webhook, event, payload)
+        await send_webhook(webhook, event, clean_payload)
 
 async def send_webhook(webhook: Webhook, event: WebhookEvent, payload: Dict):
     """Send individual webhook with retry logic"""
