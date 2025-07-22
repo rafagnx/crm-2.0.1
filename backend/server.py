@@ -656,7 +656,7 @@ async def google_calendar_callback(code: str, state: str):
 # User Routes
 @api_router.get("/users", response_model=List[UserResponse])
 async def get_users(current_user: User = Depends(get_current_user)):
-    users = await db.users.find({"is_active": True}).to_list(1000)
+    users = await db.users.find({"is_active": True}, {"_id": 0}).to_list(1000)
     return [UserResponse(**user) for user in users]
 
 # Lead Routes
