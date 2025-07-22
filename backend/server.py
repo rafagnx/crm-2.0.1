@@ -891,7 +891,7 @@ async def create_calendar_event(
 
 @api_router.get("/calendar/events", response_model=List[CalendarEvent])
 async def get_calendar_events(current_user: User = Depends(get_current_user)):
-    events = await db.calendar_events.find({"user_id": current_user.id}).sort("start_time", 1).to_list(1000)
+    events = await db.calendar_events.find({"user_id": current_user.id}, {"_id": 0}).sort("start_time", 1).to_list(1000)
     return [CalendarEvent(**event) for event in events]
 
 # Automation Routes
