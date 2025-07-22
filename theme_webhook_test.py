@@ -66,9 +66,13 @@ class ThemeWebhookTester:
         """Setup authentication for testing"""
         print("\n🔐 Setting up authentication...")
         
+        # Use a unique email with timestamp to avoid conflicts
+        import time
+        timestamp = str(int(time.time()))
+        
         # Register a test user
         user_data = {
-            "email": "theme.tester@crmsystem.com",
+            "email": f"theme.tester.{timestamp}@crmsystem.com",
             "name": "Theme Tester",
             "password": "ThemeTest123!",
             "role": "manager"
