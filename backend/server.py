@@ -1007,7 +1007,7 @@ async def get_active_theme(current_user: User = Depends(get_current_user)):
 
 @api_router.get("/themes", response_model=List[ThemeSettings])
 async def get_user_themes(current_user: User = Depends(get_current_user)):
-    themes = await db.themes.find({"user_id": current_user.id}).sort("created_at", -1).to_list(None)
+    themes = await db.themes.find({"user_id": current_user.id}, {"_id": 0}).sort("created_at", -1).to_list(None)
     return [ThemeSettings(**theme) for theme in themes]
 
 @api_router.put("/themes/{theme_id}", response_model=ThemeSettings)
