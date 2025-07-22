@@ -422,6 +422,24 @@ import aiohttp
 import hashlib
 import hmac
 
+def clean_payload_for_webhook(payload):
+    """Clean payload of MongoDB ObjectId objects for webhook serialization"""
+    import json
+    from bson import ObjectId
+    from datetime import datetime
+    
+    def json_serializer(obj):
+        """JSON serializer for objects not serializable by default json code"""
+        if isinstance(obj, ObjectId):
+            return str(obj)
+        elif isinstance(obj, datetime):
+            return obj.isoformat()
+        raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+    
+    # Convert to JSON and back to ensure all ObjectIds are converted to strings
+    json_str = json.dumps(payload, default=json_serializer)
+    return json.loads(json_str)
+
 async def trigger_webhooks(event: WebhookEvent, payload: Dict, user_id: str):
     """Trigger all webhooks for a specific event"""
     webhooks = await db.webhooks.find({
