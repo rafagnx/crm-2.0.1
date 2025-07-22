@@ -1226,6 +1226,8 @@ const MainDashboard = () => {
         return <KanbanBoard />;
       case 'calendar':
         return <Calendar />;
+      case 'automations':
+        return <Automations />;
       default:
         return <Dashboard />;
     }
