@@ -912,7 +912,7 @@ async def get_automation_rules(current_user: User = Depends(get_current_user)):
 # Activity Routes
 @api_router.get("/leads/{lead_id}/activities", response_model=List[Activity])
 async def get_lead_activities(lead_id: str, current_user: User = Depends(get_current_user)):
-    activities = await db.activities.find({"lead_id": lead_id}).sort("timestamp", -1).to_list(1000)
+    activities = await db.activities.find({"lead_id": lead_id}, {"_id": 0}).sort("timestamp", -1).to_list(1000)
     return [Activity(**activity) for activity in activities]
 
 # Advanced Dashboard/Stats Routes
