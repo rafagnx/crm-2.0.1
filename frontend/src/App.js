@@ -1206,6 +1206,668 @@ const AutomationRuleForm = ({ onClose, onSubmit, statusOptions, actionOptions })
   );
 };
 
+// Theme Manager Component
+const ThemeManager = () => {
+  const [activeTheme, setActiveTheme] = useState(null);
+  const [themes, setThemes] = useState([]);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [newTheme, setNewTheme] = useState({
+    name: '',
+    colors: {
+      primary: '#3b82f6',
+      secondary: '#6b7280',
+      success: '#10b981',
+      warning: '#f59e0b',
+      danger: '#ef4444',
+      background: '#f8fafc',
+      surface: '#ffffff',
+      text_primary: '#1e293b',
+      text_secondary: '#64748b'
+    },
+    font_family: 'Inter, system-ui, sans-serif',
+    font_size_base: '14px',
+    border_radius: '0.5rem',
+    is_dark_mode: false
+  });
+  const [logoFile, setLogoFile] = useState(null);
+
+  useEffect(() => {
+    fetchThemes();
+    fetchActiveTheme();
+  }, []);
+
+  const fetchThemes = async () => {
+    try {
+      const response = await axios.get(`${API}/themes`);
+      setThemes(response.data);
+    } catch (error) {
+      console.error('Error fetching themes:', error);
+    }
+  };
+
+  const fetchActiveTheme = async () => {
+    try {
+      const response = await axios.get(`${API}/themes/active`);
+      setActiveTheme(response.data);
+      applyTheme(response.data);
+    } catch (error) {
+      console.error('Error fetching active theme:', error);
+    }
+  };
+
+  const applyTheme = (theme) => {
+    const root = document.documentElement;
+    Object.entries(theme.colors).forEach(([key, value]) => {
+      root.style.setProperty(`--color-${key.replace('_', '-')}`, value);
+    });
+    root.style.setProperty('--font-family', theme.font_family);
+    root.style.setProperty('--font-size-base', theme.font_size_base);
+    root.style.setProperty('--border-radius', theme.border_radius);
+    
+    if (theme.is_dark_mode) {
+      document.body.classList.add('dark');
+    } else {
+      document.body.classList.remove('dark');
+    }
+  };
+
+  const handleLogoUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64String = e.target.result;
+        setNewTheme(prev => ({ ...prev, logo_base64: base64String }));
+        setLogoFile(file);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const createTheme = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await axios.post(`${API}/themes`, newTheme);
+      await fetchThemes();
+      setShowCreateForm(false);
+      setNewTheme({
+        name: '',
+        colors: {
+          primary: '#3b82f6',
+          secondary: '#6b7280',
+          success: '#10b981',
+          warning: '#f59e0b',
+          danger: '#ef4444',
+          background: '#f8fafc',
+          surface: '#ffffff',
+          text_primary: '#1e293b',
+          text_secondary: '#64748b'
+        },
+        font_family: 'Inter, system-ui, sans-serif',
+        font_size_base: '14px',
+        border_radius: '0.5rem',
+        is_dark_mode: false
+      });
+      setLogoFile(null);
+    } catch (error) {
+      console.error('Error creating theme:', error);
+    }
+    setLoading(false);
+  };
+
+  const activateTheme = async (themeId) => {
+    try {
+      await axios.post(`${API}/themes/${themeId}/activate`);
+      await fetchActiveTheme();
+      await fetchThemes();
+    } catch (error) {
+      console.error('Error activating theme:', error);
+    }
+  };
+
+  const deleteTheme = async (themeId) => {
+    if (window.confirm('Tem certeza que deseja excluir este tema?')) {
+      try {
+        await axios.delete(`${API}/themes/${themeId}`);
+        await fetchThemes();
+      } catch (error) {
+        console.error('Error deleting theme:', error);
+      }
+    }
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Gerenciamento de Temas</h1>
+        <button
+          onClick={() => setShowCreateForm(!showCreateForm)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          {showCreateForm ? 'Cancelar' : '+ Novo Tema'}
+        </button>
+      </div>
+
+      {/* Create Theme Form */}
+      {showCreateForm && (
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4">Criar Novo Tema</h2>
+          <form onSubmit={createTheme} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Nome do Tema</label>
+              <input
+                type="text"
+                value={newTheme.name}
+                onChange={(e) => setNewTheme(prev => ({ ...prev, name: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                required
+              />
+            </div>
+
+            {/* Color Palette */}
+            <div>
+              <h3 className="text-lg font-medium mb-4">Paleta de Cores</h3>
+              <div className="grid grid-cols-3 gap-4">
+                {Object.entries(newTheme.colors).map(([key, value]) => (
+                  <div key={key}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
+                      {key.replace('_', ' ')}
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="color"
+                        value={value}
+                        onChange={(e) => setNewTheme(prev => ({
+                          ...prev,
+                          colors: { ...prev.colors, [key]: e.target.value }
+                        }))}
+                        className="w-12 h-10 rounded border border-gray-300"
+                      />
+                      <span className="text-sm text-gray-600">{value}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Logo Upload */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Logo (Opcional)</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleLogoUpload}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              {logoFile && (
+                <div className="mt-2">
+                  <img 
+                    src={newTheme.logo_base64} 
+                    alt="Logo preview" 
+                    className="h-16 w-auto rounded border"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Typography */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Fonte</label>
+                <select
+                  value={newTheme.font_family}
+                  onChange={(e) => setNewTheme(prev => ({ ...prev, font_family: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="Inter, system-ui, sans-serif">Inter</option>
+                  <option value="Roboto, sans-serif">Roboto</option>
+                  <option value="Open Sans, sans-serif">Open Sans</option>
+                  <option value="Lato, sans-serif">Lato</option>
+                  <option value="Montserrat, sans-serif">Montserrat</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tamanho Base</label>
+                <select
+                  value={newTheme.font_size_base}
+                  onChange={(e) => setNewTheme(prev => ({ ...prev, font_size_base: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="12px">12px (Pequeno)</option>
+                  <option value="14px">14px (Normal)</option>
+                  <option value="16px">16px (Grande)</option>
+                  <option value="18px">18px (Extra Grande)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Border Radius */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Bordas Arredondadas</label>
+              <select
+                value={newTheme.border_radius}
+                onChange={(e) => setNewTheme(prev => ({ ...prev, border_radius: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="0">Sem arredondamento</option>
+                <option value="0.25rem">Pequeno</option>
+                <option value="0.5rem">Médio</option>
+                <option value="0.75rem">Grande</option>
+                <option value="1rem">Extra Grande</option>
+              </select>
+            </div>
+
+            {/* Dark Mode */}
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="dark_mode"
+                checked={newTheme.is_dark_mode}
+                onChange={(e) => setNewTheme(prev => ({ ...prev, is_dark_mode: e.target.checked }))}
+                className="mr-2"
+              />
+              <label htmlFor="dark_mode" className="text-sm font-medium text-gray-700">
+                Modo Escuro
+              </label>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Criando...' : 'Criar Tema'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Themes List */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {themes.map((theme) => (
+          <div key={theme.id} className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="font-semibold text-lg">{theme.name}</h3>
+              {theme.is_active && (
+                <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                  Ativo
+                </span>
+              )}
+            </div>
+
+            {/* Color Preview */}
+            <div className="flex space-x-1 mb-4">
+              {Object.values(theme.colors).slice(0, 5).map((color, index) => (
+                <div
+                  key={index}
+                  className="w-6 h-6 rounded"
+                  style={{ backgroundColor: color }}
+                ></div>
+              ))}
+            </div>
+
+            {/* Logo Preview */}
+            {theme.logo_base64 && (
+              <div className="mb-4">
+                <img 
+                  src={theme.logo_base64} 
+                  alt={`${theme.name} logo`} 
+                  className="h-12 w-auto rounded border"
+                />
+              </div>
+            )}
+
+            <div className="text-sm text-gray-600 mb-4">
+              <p>Fonte: {theme.font_family.split(',')[0]}</p>
+              <p>Modo: {theme.is_dark_mode ? 'Escuro' : 'Claro'}</p>
+            </div>
+
+            <div className="flex space-x-2">
+              {!theme.is_active && (
+                <button
+                  onClick={() => activateTheme(theme.id)}
+                  className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+                >
+                  Ativar
+                </button>
+              )}
+              {!theme.is_active && (
+                <button
+                  onClick={() => deleteTheme(theme.id)}
+                  className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors"
+                >
+                  Excluir
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Webhook Manager Component
+const WebhookManager = () => {
+  const [webhooks, setWebhooks] = useState([]);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [newWebhook, setNewWebhook] = useState({
+    name: '',
+    url: '',
+    events: [],
+    retry_count: 3,
+    timeout_seconds: 30
+  });
+  const [webhookLogs, setWebhookLogs] = useState({});
+  const [showLogs, setShowLogs] = useState({});
+
+  const eventOptions = [
+    { value: 'lead.created', label: 'Lead Criado' },
+    { value: 'lead.updated', label: 'Lead Atualizado' },
+    { value: 'lead.status_changed', label: 'Status do Lead Alterado' },
+    { value: 'lead.deleted', label: 'Lead Deletado' },
+    { value: 'user.registered', label: 'Usuário Registrado' }
+  ];
+
+  useEffect(() => {
+    fetchWebhooks();
+  }, []);
+
+  const fetchWebhooks = async () => {
+    try {
+      const response = await axios.get(`${API}/webhooks`);
+      setWebhooks(response.data);
+    } catch (error) {
+      console.error('Error fetching webhooks:', error);
+    }
+  };
+
+  const createWebhook = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await axios.post(`${API}/webhooks`, newWebhook);
+      await fetchWebhooks();
+      setShowCreateForm(false);
+      setNewWebhook({
+        name: '',
+        url: '',
+        events: [],
+        retry_count: 3,
+        timeout_seconds: 30
+      });
+    } catch (error) {
+      console.error('Error creating webhook:', error);
+    }
+    setLoading(false);
+  };
+
+  const deleteWebhook = async (webhookId) => {
+    if (window.confirm('Tem certeza que deseja excluir este webhook?')) {
+      try {
+        await axios.delete(`${API}/webhooks/${webhookId}`);
+        await fetchWebhooks();
+      } catch (error) {
+        console.error('Error deleting webhook:', error);
+      }
+    }
+  };
+
+  const testWebhook = async (webhookId) => {
+    try {
+      await axios.post(`${API}/webhooks/${webhookId}/test`);
+      alert('Webhook de teste enviado!');
+    } catch (error) {
+      console.error('Error testing webhook:', error);
+      alert('Erro ao enviar webhook de teste');
+    }
+  };
+
+  const fetchWebhookLogs = async (webhookId) => {
+    try {
+      const response = await axios.get(`${API}/webhooks/${webhookId}/logs`);
+      setWebhookLogs(prev => ({ ...prev, [webhookId]: response.data }));
+      setShowLogs(prev => ({ ...prev, [webhookId]: true }));
+    } catch (error) {
+      console.error('Error fetching webhook logs:', error);
+    }
+  };
+
+  const toggleEventSelect = (event) => {
+    setNewWebhook(prev => ({
+      ...prev,
+      events: prev.events.includes(event)
+        ? prev.events.filter(e => e !== event)
+        : [...prev.events, event]
+    }));
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Gerenciamento de Webhooks</h1>
+        <button
+          onClick={() => setShowCreateForm(!showCreateForm)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          {showCreateForm ? 'Cancelar' : '+ Novo Webhook'}
+        </button>
+      </div>
+
+      {/* Create Webhook Form */}
+      {showCreateForm && (
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4">Criar Novo Webhook</h2>
+          <form onSubmit={createWebhook} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
+              <input
+                type="text"
+                value={newWebhook.name}
+                onChange={(e) => setNewWebhook(prev => ({ ...prev, name: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">URL</label>
+              <input
+                type="url"
+                value={newWebhook.url}
+                onChange={(e) => setNewWebhook(prev => ({ ...prev, url: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="https://exemplo.com/webhook"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Eventos</label>
+              <div className="space-y-2">
+                {eventOptions.map((option) => (
+                  <label key={option.value} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={newWebhook.events.includes(option.value)}
+                      onChange={() => toggleEventSelect(option.value)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm">{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tentativas</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={newWebhook.retry_count}
+                  onChange={(e) => setNewWebhook(prev => ({ ...prev, retry_count: parseInt(e.target.value) }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Timeout (segundos)</label>
+                <input
+                  type="number"
+                  min="5"
+                  max="120"
+                  value={newWebhook.timeout_seconds}
+                  onChange={(e) => setNewWebhook(prev => ({ ...prev, timeout_seconds: parseInt(e.target.value) }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={loading || newWebhook.events.length === 0}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Criando...' : 'Criar Webhook'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Webhooks List */}
+      <div className="space-y-6">
+        {webhooks.map((webhook) => (
+          <div key={webhook.id} className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="font-semibold text-lg">{webhook.name}</h3>
+                <p className="text-sm text-gray-600">{webhook.url}</p>
+              </div>
+              <div className="flex items-center space-x-2">
+                {webhook.is_active ? (
+                  <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                    Ativo
+                  </span>
+                ) : (
+                  <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
+                    Inativo
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Events */}
+            <div className="mb-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">Eventos:</p>
+              <div className="flex flex-wrap gap-2">
+                {webhook.events.map((event) => (
+                  <span key={event} className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                    {eventOptions.find(e => e.value === event)?.label || event}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
+              <div>
+                <p className="text-gray-600">Total de Disparos</p>
+                <p className="font-semibold">{webhook.total_triggers}</p>
+              </div>
+              <div>
+                <p className="text-gray-600">Falhas</p>
+                <p className="font-semibold text-red-600">{webhook.failed_triggers}</p>
+              </div>
+              <div>
+                <p className="text-gray-600">Última Execução</p>
+                <p className="font-semibold">
+                  {webhook.last_triggered 
+                    ? new Date(webhook.last_triggered).toLocaleString('pt-BR')
+                    : 'Nunca'
+                  }
+                </p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex space-x-2">
+              <button
+                onClick={() => testWebhook(webhook.id)}
+                className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors"
+              >
+                Testar
+              </button>
+              <button
+                onClick={() => fetchWebhookLogs(webhook.id)}
+                className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+              >
+                Ver Logs
+              </button>
+              <button
+                onClick={() => deleteWebhook(webhook.id)}
+                className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors"
+              >
+                Excluir
+              </button>
+            </div>
+
+            {/* Webhook Logs */}
+            {showLogs[webhook.id] && webhookLogs[webhook.id] && (
+              <div className="mt-4 border-t pt-4">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="font-medium">Logs de Execução</h4>
+                  <button
+                    onClick={() => setShowLogs(prev => ({ ...prev, [webhook.id]: false }))}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="max-h-64 overflow-y-auto space-y-2">
+                  {webhookLogs[webhook.id].map((log) => (
+                    <div key={log.id} className={`p-2 rounded text-sm ${
+                      log.success ? 'bg-green-50 border-l-4 border-green-400' : 'bg-red-50 border-l-4 border-red-400'
+                    }`}>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">{log.event}</span>
+                        <span className="text-xs text-gray-500">
+                          {new Date(log.triggered_at).toLocaleString('pt-BR')}
+                        </span>
+                      </div>
+                      {log.response_status && (
+                        <div className="text-xs mt-1">
+                          Status: {log.response_status}
+                          {log.error_message && (
+                            <div className="text-red-600 mt-1">{log.error_message}</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {webhooks.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-gray-500">Nenhum webhook configurado.</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Main Dashboard Component with Navigation
 const MainDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
