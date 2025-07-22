@@ -906,7 +906,7 @@ async def create_automation_rule(
 
 @api_router.get("/automation/rules", response_model=List[AutomationRule])
 async def get_automation_rules(current_user: User = Depends(get_current_user)):
-    rules = await db.automation_rules.find({"created_by": current_user.id}).to_list(1000)
+    rules = await db.automation_rules.find({"created_by": current_user.id}, {"_id": 0}).to_list(1000)
     return [AutomationRule(**rule) for rule in rules]
 
 # Activity Routes
