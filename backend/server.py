@@ -546,7 +546,7 @@ def create_webhook_signature(secret: str, payload: Dict) -> str:
 async def update_webhook_stats(webhook_id: str, success: bool):
     """Update webhook statistics"""
     update_data = {
-        "last_triggered": datetime.utcnow(),
+        "$set": {"last_triggered": datetime.utcnow()},
         "$inc": {"total_triggers": 1}
     }
     
