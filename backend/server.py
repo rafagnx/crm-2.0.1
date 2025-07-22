@@ -1147,10 +1147,12 @@ async def get_webhook_logs(
     if not webhook:
         raise HTTPException(status_code=404, detail="Webhook not found")
     
-    logs = await db.webhook_logs.find({"webhook_id": webhook_id}) \
-        .sort("triggered_at", -1) \
-        .limit(limit) \
-        .to_list(None)
+    logs = await db.webhook_logs.find(
+        {"webhook_id": webhook_id}, 
+        {"_id": 0}  # Exclude MongoDB _id field
+    ).sort("triggered_at", -1) \
+     .limit(limit) \
+     .to_list(None)
     
     return [WebhookLog(**log) for log in logs]
 
