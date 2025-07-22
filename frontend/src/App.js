@@ -1216,6 +1216,8 @@ const MainDashboard = () => {
     { id: 'kanban', label: 'Kanban', icon: '📋' },
     { id: 'calendar', label: 'Calendário', icon: '📅' },
     { id: 'automations', label: 'Automações', icon: '🤖' },
+    { id: 'themes', label: 'Temas', icon: '🎨' },
+    { id: 'webhooks', label: 'Webhooks', icon: '🔗' },
   ];
 
   const renderContent = () => {
@@ -1228,6 +1230,10 @@ const MainDashboard = () => {
         return <Calendar />;
       case 'automations':
         return <Automations />;
+      case 'themes':
+        return <ThemeManager />;
+      case 'webhooks':
+        return <WebhookManager />;
       default:
         return <Dashboard />;
     }
