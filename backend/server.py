@@ -549,6 +549,12 @@ async def register(user_data: UserCreate):
     # Create JWT token
     token = create_jwt_token(user.id, user.email, user.role.value)
     
+    # Trigger webhook (using admin user_id as reference since this is registration)
+    await trigger_webhooks(WebhookEvent.USER_REGISTERED, {
+        "user": UserResponse(**user.dict()).dict(),
+        "registration_date": user.created_at.isoformat()
+    }, user.id)
+    
     return {
         "access_token": token,
         "token_type": "bearer",
