@@ -925,6 +925,187 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
         "top_sources": top_sources
     }
 
+# Theme Routes
+@api_router.post("/themes", response_model=ThemeSettings)
+async def create_theme(theme_data: ThemeCreate, current_user: User = Depends(get_current_user)):
+    # Check if user already has an active theme
+    existing_theme = await db.themes.find_one({"user_id": current_user.id, "is_active": True})
+    
+    # Deactivate existing theme if it exists
+    if existing_theme:
+        await db.themes.update_one(
+            {"id": existing_theme["id"]},
+            {"$set": {"is_active": False, "updated_at": datetime.utcnow()}}
+        )
+    
+    # Create new theme
+    theme = ThemeSettings(
+        user_id=current_user.id,
+        **theme_data.dict(exclude_unset=True)
+    )
+    
+    await db.themes.insert_one(theme.dict())
+    return theme
+
+@api_router.get("/themes/active", response_model=ThemeSettings)
+async def get_active_theme(current_user: User = Depends(get_current_user)):
+    theme = await db.themes.find_one({"user_id": current_user.id, "is_active": True})
+    if not theme:
+        # Return default theme
+        default_theme = ThemeSettings(user_id=current_user.id)
+        await db.themes.insert_one(default_theme.dict())
+        return default_theme
+    return ThemeSettings(**theme)
+
+@api_router.get("/themes", response_model=List[ThemeSettings])
+async def get_user_themes(current_user: User = Depends(get_current_user)):
+    themes = await db.themes.find({"user_id": current_user.id}).sort("created_at", -1).to_list(None)
+    return [ThemeSettings(**theme) for theme in themes]
+
+@api_router.put("/themes/{theme_id}", response_model=ThemeSettings)
+async def update_theme(
+    theme_id: str,
+    theme_data: ThemeUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    theme = await db.themes.find_one({"id": theme_id, "user_id": current_user.id})
+    if not theme:
+        raise HTTPException(status_code=404, detail="Theme not found")
+    
+    update_data = theme_data.dict(exclude_unset=True)
+    update_data["updated_at"] = datetime.utcnow()
+    
+    await db.themes.update_one(
+        {"id": theme_id},
+        {"$set": update_data}
+    )
+    
+    updated_theme = await db.themes.find_one({"id": theme_id})
+    return ThemeSettings(**updated_theme)
+
+@api_router.post("/themes/{theme_id}/activate")
+async def activate_theme(theme_id: str, current_user: User = Depends(get_current_user)):
+    theme = await db.themes.find_one({"id": theme_id, "user_id": current_user.id})
+    if not theme:
+        raise HTTPException(status_code=404, detail="Theme not found")
+    
+    # Deactivate all user themes
+    await db.themes.update_many(
+        {"user_id": current_user.id},
+        {"$set": {"is_active": False, "updated_at": datetime.utcnow()}}
+    )
+    
+    # Activate selected theme
+    await db.themes.update_one(
+        {"id": theme_id},
+        {"$set": {"is_active": True, "updated_at": datetime.utcnow()}}
+    )
+    
+    return {"message": "Theme activated successfully"}
+
+@api_router.delete("/themes/{theme_id}")
+async def delete_theme(theme_id: str, current_user: User = Depends(get_current_user)):
+    theme = await db.themes.find_one({"id": theme_id, "user_id": current_user.id})
+    if not theme:
+        raise HTTPException(status_code=404, detail="Theme not found")
+    
+    if theme.get("is_active"):
+        raise HTTPException(status_code=400, detail="Cannot delete active theme")
+    
+    await db.themes.delete_one({"id": theme_id})
+    return {"message": "Theme deleted successfully"}
+
+# Webhook Routes
+@api_router.post("/webhooks", response_model=Webhook)
+async def create_webhook(webhook_data: WebhookCreate, current_user: User = Depends(get_current_user)):
+    webhook = Webhook(
+        user_id=current_user.id,
+        **webhook_data.dict()
+    )
+    
+    await db.webhooks.insert_one(webhook.dict())
+    return webhook
+
+@api_router.get("/webhooks", response_model=List[Webhook])
+async def get_webhooks(current_user: User = Depends(get_current_user)):
+    webhooks = await db.webhooks.find({"user_id": current_user.id}).sort("created_at", -1).to_list(None)
+    return [Webhook(**webhook) for webhook in webhooks]
+
+@api_router.get("/webhooks/{webhook_id}", response_model=Webhook)
+async def get_webhook(webhook_id: str, current_user: User = Depends(get_current_user)):
+    webhook = await db.webhooks.find_one({"id": webhook_id, "user_id": current_user.id})
+    if not webhook:
+        raise HTTPException(status_code=404, detail="Webhook not found")
+    return Webhook(**webhook)
+
+@api_router.put("/webhooks/{webhook_id}", response_model=Webhook)
+async def update_webhook(
+    webhook_id: str,
+    webhook_data: WebhookUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    webhook = await db.webhooks.find_one({"id": webhook_id, "user_id": current_user.id})
+    if not webhook:
+        raise HTTPException(status_code=404, detail="Webhook not found")
+    
+    update_data = webhook_data.dict(exclude_unset=True)
+    update_data["updated_at"] = datetime.utcnow()
+    
+    await db.webhooks.update_one(
+        {"id": webhook_id},
+        {"$set": update_data}
+    )
+    
+    updated_webhook = await db.webhooks.find_one({"id": webhook_id})
+    return Webhook(**updated_webhook)
+
+@api_router.delete("/webhooks/{webhook_id}")
+async def delete_webhook(webhook_id: str, current_user: User = Depends(get_current_user)):
+    webhook = await db.webhooks.find_one({"id": webhook_id, "user_id": current_user.id})
+    if not webhook:
+        raise HTTPException(status_code=404, detail="Webhook not found")
+    
+    await db.webhooks.delete_one({"id": webhook_id})
+    return {"message": "Webhook deleted successfully"}
+
+@api_router.post("/webhooks/{webhook_id}/test")
+async def test_webhook(webhook_id: str, current_user: User = Depends(get_current_user)):
+    webhook = await db.webhooks.find_one({"id": webhook_id, "user_id": current_user.id})
+    if not webhook:
+        raise HTTPException(status_code=404, detail="Webhook not found")
+    
+    webhook_obj = Webhook(**webhook)
+    
+    # Send test payload
+    test_payload = {
+        "test": True,
+        "message": "This is a test webhook from CRM System",
+        "timestamp": datetime.utcnow().isoformat(),
+        "user_id": current_user.id
+    }
+    
+    await send_webhook(webhook_obj, WebhookEvent.LEAD_CREATED, test_payload)
+    
+    return {"message": "Test webhook sent successfully"}
+
+@api_router.get("/webhooks/{webhook_id}/logs", response_model=List[WebhookLog])
+async def get_webhook_logs(
+    webhook_id: str,
+    current_user: User = Depends(get_current_user),
+    limit: int = 50
+):
+    # Verify webhook ownership
+    webhook = await db.webhooks.find_one({"id": webhook_id, "user_id": current_user.id})
+    if not webhook:
+        raise HTTPException(status_code=404, detail="Webhook not found")
+    
+    logs = await db.webhook_logs.find({"webhook_id": webhook_id}) \
+        .sort("triggered_at", -1) \
+        .limit(limit) \
+        .to_list(None)
+    
+    return [WebhookLog(**log) for log in logs]
+
 # Include the router in the main app
 app.include_router(api_router)
 
