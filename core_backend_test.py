@@ -11,7 +11,7 @@ import sys
 import os
 
 # Get backend URL from frontend .env file
-BACKEND_URL = "https://375efc0a-27c8-46c9-b634-f0f4630cb90c.preview.emergentagent.com/api"
+BACKEND_URL = "https://923649d8-acd4-4f14-92b0-4c9880bc0ff4.preview.emergentagent.com/api"
 
 class CoreBackendTester:
     def __init__(self):
