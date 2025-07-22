@@ -428,7 +428,7 @@ async def trigger_webhooks(event: WebhookEvent, payload: Dict, user_id: str):
         "user_id": user_id,
         "events": event,
         "is_active": True
-    }).to_list(100)
+    }, {"_id": 0}).to_list(100)
     
     # Process webhooks in background
     if webhooks:
