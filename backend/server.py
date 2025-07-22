@@ -749,6 +749,11 @@ async def update_lead(
 
 @api_router.delete("/leads/{lead_id}")
 async def delete_lead(lead_id: str, current_user: User = Depends(get_current_user)):
+    # Get lead before deletion for webhook
+    lead = await db.leads.find_one({"id": lead_id})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    
     result = await db.leads.delete_one({"id": lead_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Lead not found")
@@ -761,6 +766,9 @@ async def delete_lead(lead_id: str, current_user: User = Depends(get_current_use
         details=f"Lead deleted"
     )
     await db.activities.insert_one(activity.dict())
+    
+    # Trigger webhook
+    await trigger_webhooks(WebhookEvent.LEAD_DELETED, lead, current_user.id)
     
     return {"message": "Lead deleted successfully"}
 
