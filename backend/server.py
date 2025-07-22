@@ -735,6 +735,15 @@ async def update_lead(
     # Process automation rules if status changed
     if old_status != new_status:
         await process_automation_rules(lead_id, new_status, current_user.id)
+        # Trigger status change webhook
+        await trigger_webhooks(WebhookEvent.LEAD_STATUS_CHANGED, {
+            "lead": updated_lead,
+            "old_status": old_status,
+            "new_status": new_status
+        }, current_user.id)
+    
+    # Trigger general update webhook
+    await trigger_webhooks(WebhookEvent.LEAD_UPDATED, updated_lead, current_user.id)
     
     return Lead(**updated_lead)
 
