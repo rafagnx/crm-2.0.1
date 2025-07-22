@@ -805,7 +805,7 @@ async def get_kanban_board(current_user: User = Depends(get_current_user)):
     
     kanban_columns = []
     for column in columns:
-        leads = await db.leads.find({"status": column["status"]}).sort("position", 1).to_list(1000)
+        leads = await db.leads.find({"status": column["status"]}, {"_id": 0}).sort("position", 1).to_list(1000)
         kanban_columns.append(KanbanColumn(
             status=column["status"],
             title=column["title"],
