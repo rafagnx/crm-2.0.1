@@ -257,6 +257,67 @@ test_plan:
   test_all: true
   test_priority: "high_first"
 
+  - task: "Google Calendar Integration"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implemented Google OAuth flow, calendar events API, Google Calendar API integration with automatic sync"
+
+  - task: "Advanced Automations System"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implemented automation rules system with triggers and actions (schedule_follow_up, create_task) but missing frontend UI"
+
+  - task: "Advanced Dashboard Stats"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implemented comprehensive dashboard with conversion rates, deal sizes, monthly trends, top sources"
+
+frontend:
+  - task: "Calendar UI"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implemented Calendar component with Google Calendar connection UI and events display"
+
+  - task: "Advanced Dashboard UI"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implemented advanced dashboard with stats cards, charts, recent activities, top sources"
+
 agent_communication:
     - agent: "main"
-      message: "Core CRM Kanban system implemented with authentication, kanban board, lead management. Frontend tested manually with screenshots - login, registration, board display, and lead creation working. Backend endpoints implemented but need comprehensive testing. Ready for backend testing agent to test all API endpoints."
+      message: "Significant progress made: Google Calendar integration, advanced automations system, comprehensive dashboard stats implemented. Need to test new features and implement remaining high-value features: WhatsApp integration, automation rules UI, themes, API documentation."
