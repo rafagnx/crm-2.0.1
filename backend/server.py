@@ -831,6 +831,16 @@ async def move_lead(
     # Process automation rules if status changed
     if old_status != new_status:
         await process_automation_rules(lead_id, new_status, current_user.id)
+        
+        # Get updated lead for webhook
+        updated_lead = await db.leads.find_one({"id": lead_id})
+        
+        # Trigger status change webhook
+        await trigger_webhooks(WebhookEvent.LEAD_STATUS_CHANGED, {
+            "lead": updated_lead,
+            "old_status": old_status,
+            "new_status": new_status
+        }, current_user.id)
     
     return {"message": "Lead moved successfully"}
 
