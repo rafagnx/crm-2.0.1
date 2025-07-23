@@ -2677,7 +2677,7 @@ const MainDashboard = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors relative ${
                       activeTab === tab.id
                         ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border-b-2 border-blue-600'
                         : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -2685,6 +2685,11 @@ const MainDashboard = () => {
                   >
                     <span>{tab.icon}</span>
                     <span>{tab.label}</span>
+                    {tab.badge && tab.badge > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        {tab.badge > 99 ? '99+' : tab.badge}
+                      </span>
+                    )}
                   </button>
                 ))}
               </nav>
