@@ -908,24 +908,24 @@ const KanbanBoard = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl">Carregando...</div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+        <div className="text-xl text-gray-900 dark:text-white">Carregando...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-200">
       {/* Kanban Board */}
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Pipeline de Vendas</h1>
-            <p className="text-gray-600">Gerencie seus leads através do funil de vendas</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Pipeline de Vendas</h1>
+            <p className="text-gray-600 dark:text-gray-300">Gerencie seus leads através do funil de vendas</p>
           </div>
           <button
             onClick={() => setShowNewLeadForm(true)}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200"
           >
             ➕ Novo Lead
           </button>
