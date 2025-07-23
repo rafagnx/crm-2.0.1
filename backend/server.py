@@ -552,18 +552,6 @@ async def process_automation_rules(lead_id: str, new_status: LeadStatus, user_id
             await db.activities.insert_one(activity.dict())
 
 # Notification helpers
-async def create_notification(user_id: str, notification_type: NotificationType, title: str, message: str, priority: NotificationPriority = NotificationPriority.MEDIUM, data: Dict = {}):
-    """Create a new notification for a user"""
-    notification = Notification(
-        user_id=user_id,
-        type=notification_type,
-        priority=priority,
-        title=title,
-        message=message,
-        data=data
-    )
-    await db.notifications.insert_one(notification.dict())
-    return notification
 
 async def create_lead_notification(lead_id: str, user_id: str, notification_type: NotificationType, action: str, lead_title: str = None):
     """Create notifications related to lead events"""
