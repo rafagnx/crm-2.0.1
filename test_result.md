@@ -356,15 +356,18 @@ frontend:
 
   - task: "Sistema de Notificações - Backend"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Implementado sistema completo de notificações no backend: Modelos Notification com tipos (lead_created, lead_moved, lead_overdue, lead_high_value, task_created, task_overdue, automation_triggered, system_alert), endpoints CRUD (/api/notifications - GET, PATCH, DELETE), funcionalidades automáticas (create_lead_notification, create_system_notification, notify_lead_overdue), integração com eventos existentes (criação de leads, movimentação, leads de alto valor), sistema de prioridades (low, medium, high, urgent). Endpoints implementados: GET /api/notifications (com filtros), GET /api/notifications/count (contador não lidas), PATCH /api/notifications/{id} (marcar como lida), PATCH /api/notifications/mark-all-read, DELETE /api/notifications/{id}, POST /api/notifications/test"
+        - working: true
+          agent: "testing"
+          comment: "✅ SISTEMA DE NOTIFICAÇÕES BACKEND FUNCIONANDO: Todos os endpoints implementados e acessíveis, sistema de notificações automáticas para eventos de leads funcionando, operações CRUD completas, sistema de prioridades funcionando corretamente, filtros e contador de não lidas operacionais. Correção aplicada: parâmetro 'data' alterado para 'metadata' na criação de notificações para leads. Sistema pronto para produção."
 
   - task: "Sistema de Notificações - Frontend"
     implemented: true
