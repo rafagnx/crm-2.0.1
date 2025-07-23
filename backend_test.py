@@ -69,8 +69,8 @@ class CRMBackendTester:
         
         # Setup authentication using admin credentials as specified in the request
         login_data = {
-            "email": "admin",
-            "password": "Rafa040388?"
+            "email": "suporte",
+            "password": "25261020"
         }
         
         response = self.make_request("POST", "/auth/login", login_data)
