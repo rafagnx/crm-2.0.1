@@ -137,6 +137,9 @@ backend:
         - working: true
           agent: "main"
           comment: "✅ TESTED SUCCESSFULLY: Created lead via API with all fields (title, company, contact, email, phone, value, tags, notes)"
+        - working: true
+          agent: "testing"
+          comment: "✅ RE-TESTED SUCCESSFULLY: Lead CRUD operations fully functional - CREATE: Multiple leads created successfully with all fields, READ: Individual lead retrieval and list retrieval working, UPDATE: Lead status, value, notes, priority updates working correctly, DELETE: Lead deletion working with proper verification, All CRUD operations tested and verified"
 
   - task: "Kanban Board API"
     implemented: true
