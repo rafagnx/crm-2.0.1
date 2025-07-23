@@ -1868,7 +1868,7 @@ const WebhookManager = () => {
       )}
     </div>
   );
-}};
+};
 
 // Advanced Reports Component
 const AdvancedReports = () => {
