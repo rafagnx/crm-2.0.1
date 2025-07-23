@@ -278,17 +278,6 @@ const AuthForm = () => {
                   {isLogin ? '✨ Não tem conta? Registre-se' : '🔐 Já tem conta? Entre'}
                 </button>
               </div>
-              
-              {/* Demo users info */}
-              {isLogin && (
-                <div className="mt-6 p-4 bg-black/20 rounded-xl backdrop-blur-sm border border-white/10">
-                  <p className="text-white/80 text-sm text-center mb-2">👥 <strong>Usuários Demo:</strong></p>
-                  <div className="text-xs text-white/60 space-y-1">
-                    <p><strong>Admin:</strong> admin / Rafa040388?</p>
-                    <p><strong>Suporte:</strong> suporte / 25261020</p>
-                  </div>
-                </div>
-              )}
             </form>
           </div>
         </div>
