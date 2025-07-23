@@ -1195,6 +1195,49 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+@app.on_event("startup")
+async def create_initial_users():
+    """Create initial admin and support users if they don't exist"""
+    try:
+        # Check if admin user exists
+        admin_user = await db.users.find_one({"email": "admin"})
+        if not admin_user:
+            # Create admin user
+            admin_password_hash = bcrypt.hashpw("Rafa040388?".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            admin_data = {
+                "id": str(uuid.uuid4()),
+                "email": "admin",
+                "name": "Administratora",
+                "password_hash": admin_password_hash,
+                "role": UserRole.ADMIN,
+                "created_at": datetime.utcnow(),
+                "is_active": True,
+                "google_tokens": None
+            }
+            await db.users.insert_one(admin_data)
+            logger.info("Admin user created successfully")
+        
+        # Check if support user exists
+        support_user = await db.users.find_one({"email": "suporte"})
+        if not support_user:
+            # Create support user  
+            support_password_hash = bcrypt.hashpw("25261020".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            support_data = {
+                "id": str(uuid.uuid4()),
+                "email": "suporte",
+                "name": "Suporte",
+                "password_hash": support_password_hash,
+                "role": UserRole.MANAGER,
+                "created_at": datetime.utcnow(),
+                "is_active": True,
+                "google_tokens": None
+            }
+            await db.users.insert_one(support_data)
+            logger.info("Support user created successfully")
+            
+    except Exception as e:
+        logger.error(f"Error creating initial users: {e}")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
