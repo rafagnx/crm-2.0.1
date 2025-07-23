@@ -122,6 +122,9 @@ backend:
         - working: true
           agent: "testing"
           comment: "✅ RE-TESTED SUCCESSFULLY: Authentication system fully functional - User registration with role assignment working, JWT token generation and validation working, Login endpoint working, Role-based access control working (manager role can access users list), All authentication flows tested and verified"
+        - working: true
+          agent: "testing"
+          comment: "✅ RE-TESTED SUCCESSFULLY (2025-01-23): Authentication system confirmed fully functional after dependency fixes - User registration with JWT tokens working (User ID: 7f93d838-401b-4bee-b41e-e0489ad1dbd8), Demo users login successful (admin/Rafa040388? and suporte/25261020 with correct roles), JWT token validation working correctly, Role assignment working properly"
 
   - task: "Lead CRUD Operations" 
     implemented: true
