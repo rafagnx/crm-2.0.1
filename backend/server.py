@@ -962,11 +962,27 @@ async def create_lead(lead_data: LeadCreate, current_user: User = Depends(get_cu
     # Process automation rules
     await process_automation_rules(lead.id, lead.status, current_user.id)
     
+    # Create notification for lead creation
+    await create_lead_notification(
+        lead_id=lead.id,
+        user_id=current_user.id,
+        notification_type=NotificationType.LEAD_CREATED,
+        action="created",
+        lead_title=lead.title
+    )
+    
+    # Check for high-value lead notification
+    if lead.value and lead.value >= 10000:
+        await create_lead_notification(
+            lead_id=lead.id,
+            user_id=current_user.id,
+            notification_type=NotificationType.LEAD_HIGH_VALUE,
+            action="high_value",
+            lead_title=lead.title
+        )
+    
     # Trigger webhooks
     await trigger_webhooks(WebhookEvent.LEAD_CREATED, lead.dict(), current_user.id)
-    
-    # Create notifications
-    await notify_lead_event(lead.dict(), "created", current_user.id)
     
     return lead
 
