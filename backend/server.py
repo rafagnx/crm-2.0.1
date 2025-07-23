@@ -994,6 +994,127 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
         "top_sources": top_sources
     }
 
+@api_router.get("/reports/stats")
+async def get_reports_stats(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Enhanced stats endpoint with date filtering for reports"""
+    from datetime import datetime
+    
+    # Build date filter
+    date_filter = {}
+    if start_date:
+        date_filter["$gte"] = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+    if end_date:
+        date_filter["$lte"] = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+    
+    match_stage = {"created_at": date_filter} if date_filter else {}
+    
+    # Pipeline for status stats with date filter
+    status_pipeline = [
+        {"$match": match_stage},
+        {"$group": {"_id": "$status", "count": {"$sum": 1}, "total_value": {"$sum": "$value"}}}
+    ]
+    status_stats = await db.leads.aggregate(status_pipeline).to_list(None)
+    
+    # Count total leads with date filter
+    total_leads = await db.leads.count_documents(match_stage)
+    
+    # Conversion stats with date filter
+    won_filter = {**match_stage, "status": LeadStatus.CLOSED_WON}
+    lost_filter = {**match_stage, "status": LeadStatus.CLOSED_LOST}
+    
+    closed_won = await db.leads.count_documents(won_filter)
+    closed_lost = await db.leads.count_documents(lost_filter)
+    conversion_rate = (closed_won / total_leads * 100) if total_leads > 0 else 0
+    
+    # Average deal size with date filter
+    won_deals = await db.leads.find(won_filter).to_list(None)
+    avg_deal_size = sum(deal.get("value", 0) for deal in won_deals) / len(won_deals) if won_deals else 0
+    
+    # Daily trends within date range
+    daily_pipeline = [
+        {"$match": match_stage},
+        {"$group": {
+            "_id": {
+                "year": {"$year": "$created_at"},
+                "month": {"$month": "$created_at"},
+                "day": {"$dayOfMonth": "$created_at"}
+            },
+            "leads_created": {"$sum": 1},
+            "total_value": {"$sum": "$value"},
+            "won_deals": {"$sum": {"$cond": [{"$eq": ["$status", "fechado_ganho"]}, 1, 0]}},
+            "lost_deals": {"$sum": {"$cond": [{"$eq": ["$status", "fechado_perdido"]}, 1, 0]}}
+        }},
+        {"$sort": {"_id.year": 1, "_id.month": 1, "_id.day": 1}}
+    ]
+    daily_trends = await db.leads.aggregate(daily_pipeline).to_list(None)
+    
+    # Performance by user/assignee
+    user_pipeline = [
+        {"$match": match_stage},
+        {"$group": {
+            "_id": "$assigned_to",
+            "leads_count": {"$sum": 1},
+            "total_value": {"$sum": "$value"},
+            "won_deals": {"$sum": {"$cond": [{"$eq": ["$status", "fechado_ganho"]}, 1, 0]}},
+            "conversion_rate": {"$avg": {"$cond": [{"$eq": ["$status", "fechado_ganho"]}, 1, 0]}}
+        }},
+        {"$sort": {"total_value": -1}},
+        {"$limit": 10}
+    ]
+    user_performance = await db.leads.aggregate(user_pipeline).to_list(None)
+    
+    # Lead sources performance
+    source_pipeline = [
+        {"$match": match_stage},
+        {"$group": {
+            "_id": "$source",
+            "leads_count": {"$sum": 1},
+            "total_value": {"$sum": "$value"},
+            "won_deals": {"$sum": {"$cond": [{"$eq": ["$status", "fechado_ganho"]}, 1, 0]}},
+            "avg_deal_size": {"$avg": "$value"}
+        }},
+        {"$sort": {"leads_count": -1}}
+    ]
+    source_performance = await db.leads.aggregate(source_pipeline).to_list(None)
+    
+    # Pipeline progress analysis
+    pipeline_analysis = []
+    for status in LeadStatus:
+        status_leads = await db.leads.find({**match_stage, "status": status.value}).to_list(None)
+        if status_leads:
+            avg_time_in_status = 0  # Could calculate average time spent in each status
+            pipeline_analysis.append({
+                "status": status.value,
+                "count": len(status_leads),
+                "total_value": sum(lead.get("value", 0) for lead in status_leads),
+                "avg_time_in_status": avg_time_in_status
+            })
+    
+    return {
+        "period": {
+            "start_date": start_date,
+            "end_date": end_date,
+            "total_days": (datetime.fromisoformat(end_date.replace('Z', '+00:00')) - datetime.fromisoformat(start_date.replace('Z', '+00:00'))).days if start_date and end_date else None
+        },
+        "summary": {
+            "total_leads": total_leads,
+            "conversion_rate": round(conversion_rate, 2),
+            "avg_deal_size": round(avg_deal_size, 2),
+            "total_value": sum(item.get("total_value", 0) for item in status_stats),
+            "closed_won": closed_won,
+            "closed_lost": closed_lost
+        },
+        "status_stats": {item["_id"]: {"count": item["count"], "value": item.get("total_value", 0)} for item in status_stats},
+        "daily_trends": daily_trends,
+        "user_performance": user_performance,
+        "source_performance": source_performance,
+        "pipeline_analysis": pipeline_analysis
+    }
+
 # Theme Routes
 @api_router.post("/themes", response_model=ThemeSettings)
 async def create_theme(theme_data: ThemeCreate, current_user: User = Depends(get_current_user)):
