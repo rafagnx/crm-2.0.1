@@ -2608,13 +2608,33 @@ const NotificationCenter = () => {
 // Main Dashboard Component with Navigation
 const MainDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [unreadCount, setUnreadCount] = useState(0);
   const { logout, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+
+  // Fetch notification count on mount and periodically
+  const fetchNotificationCount = async () => {
+    try {
+      const response = await axios.get(`${API}/notifications/count`);
+      setUnreadCount(response.data.unread);
+    } catch (error) {
+      console.error('Error fetching notification count:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotificationCount();
+    
+    // Update notification count every 30 seconds
+    const interval = setInterval(fetchNotificationCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'kanban', label: 'Kanban', icon: '📋' },
     { id: 'reports', label: 'Relatórios', icon: '📈' },
+    { id: 'notifications', label: 'Notificações', icon: '🔔', badge: unreadCount },
     { id: 'automations', label: 'Automações', icon: '🤖' },
     { id: 'themes', label: 'Temas', icon: '🎨' },
     { id: 'webhooks', label: 'Webhooks', icon: '🔗' },
