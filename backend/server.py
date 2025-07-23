@@ -1321,13 +1321,13 @@ async def create_initial_users():
     """Create initial admin and support users if they don't exist"""
     try:
         # Check if admin user exists
-        admin_user = await db.users.find_one({"email": "admin"})
+        admin_user = await db.users.find_one({"email": "admin@descomplica.com"})
         if not admin_user:
             # Create admin user
             admin_password_hash = bcrypt.hashpw("Rafa040388?".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
             admin_data = {
                 "id": str(uuid.uuid4()),
-                "email": "admin",
+                "email": "admin@descomplica.com",
                 "name": "Administratora",
                 "password_hash": admin_password_hash,
                 "role": UserRole.ADMIN,
