@@ -805,6 +805,9 @@ async def create_lead(lead_data: LeadCreate, current_user: User = Depends(get_cu
     # Trigger webhooks
     await trigger_webhooks(WebhookEvent.LEAD_CREATED, lead.dict(), current_user.id)
     
+    # Create notifications
+    await notify_lead_event(lead.dict(), "created", current_user.id)
+    
     return lead
 
 @api_router.get("/leads", response_model=List[Lead])
