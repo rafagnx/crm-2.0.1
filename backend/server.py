@@ -728,7 +728,7 @@ async def connect_google_calendar(current_user: User = Depends(get_current_user)
         scopes=GOOGLE_SCOPES
     )
     
-    flow.redirect_uri = f"https://89863155-7754-4917-8455-8b0133abbbcd.preview.emergentagent.com/api/auth/google/callback"
+    flow.redirect_uri = f"https://abf9d67a-ff8e-4cad-8bbd-422300c684d2.preview.emergentagent.com/api/auth/google/callback"
     
     authorization_url, state = flow.authorization_url(
         access_type='offline',
@@ -753,7 +753,7 @@ async def google_calendar_callback(code: str, state: str):
         scopes=GOOGLE_SCOPES
     )
     
-    flow.redirect_uri = f"https://89863155-7754-4917-8455-8b0133abbbcd.preview.emergentagent.com/api/auth/google/callback"
+    flow.redirect_uri = f"https://abf9d67a-ff8e-4cad-8bbd-422300c684d2.preview.emergentagent.com/api/auth/google/callback"
     flow.fetch_token(code=code)
     
     credentials = flow.credentials
