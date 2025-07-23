@@ -354,6 +354,18 @@ frontend:
           agent: "testing"
           comment: "✅ TESTED SUCCESSFULLY: Advanced Dashboard UI fully functional - 4 main stats cards (Total de Leads, Taxa de Conversão, Ticket Médio, Pipeline Valor), Status distribution chart working, Recent activities feed displaying properly, Top sources section showing lead sources with values, Professional layout with proper spacing and colors, Responsive design working on different screen sizes"
 
+  - task: "Sistema de Notificações - Backend"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementado sistema completo de notificações no backend: Modelos Notification com tipos (lead_created, lead_moved, lead_overdue, lead_high_value, task_created, task_overdue, automation_triggered, system_alert), endpoints CRUD (/api/notifications - GET, PATCH, DELETE), funcionalidades automáticas (create_lead_notification, create_system_notification, notify_lead_overdue), integração com eventos existentes (criação de leads, movimentação, leads de alto valor), sistema de prioridades (low, medium, high, urgent). Endpoints implementados: GET /api/notifications (com filtros), GET /api/notifications/count (contador não lidas), PATCH /api/notifications/{id} (marcar como lida), PATCH /api/notifications/mark-all-read, DELETE /api/notifications/{id}, POST /api/notifications/test"
+
 agent_communication:
     - agent: "main"
       message: "User wants to focus on: 1) Temas & Personalização, 2) Relatórios Avançados, 3) Testar funcionalidades existentes, 4) Sistema de Notificações. NO Google Calendar or Email/WhatsApp integrations needed. Starting with testing existing drag & drop and dashboard functionalities."
