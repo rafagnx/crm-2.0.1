@@ -2295,6 +2295,316 @@ const AdvancedReports = () => {
   );
 };
 
+// Notifications Center Component  
+const NotificationCenter = () => {
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showSettings, setShowSettings] = useState(false);
+  const [settings, setSettings] = useState({
+    lead_created: true,
+    lead_status_changed: true,
+    lead_assigned: true,
+    follow_up_due: true,
+    high_value_leads: true,
+    deal_closed: true,
+    email_notifications: false,
+    push_notifications: true
+  });
+
+  const fetchNotifications = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API}/notifications`);
+      setNotifications(response.data);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchNotificationCount = async () => {
+    try {
+      const response = await axios.get(`${API}/notifications/count`);
+      setUnreadCount(response.data.unread);
+    } catch (error) {
+      console.error('Error fetching notification count:', error);
+    }
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const response = await axios.get(`${API}/notifications/settings`);
+      setSettings(response.data);
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+    }
+  };
+
+  const markAsRead = async (notificationId) => {
+    try {
+      await axios.put(`${API}/notifications/${notificationId}/read`);
+      setNotifications(notifications.map(n => 
+        n.id === notificationId ? { ...n, is_read: true } : n
+      ));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Error marking as read:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await axios.put(`${API}/notifications/mark-all-read`);
+      setNotifications(notifications.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+    }
+  };
+
+  const deleteNotification = async (notificationId) => {
+    try {
+      await axios.delete(`${API}/notifications/${notificationId}`);
+      setNotifications(notifications.filter(n => n.id !== notificationId));
+      const deletedNotification = notifications.find(n => n.id === notificationId);
+      if (deletedNotification && !deletedNotification.is_read) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
+  };
+
+  const updateSettings = async (newSettings) => {
+    try {
+      await axios.put(`${API}/notifications/settings`, newSettings);
+      setSettings(newSettings);
+    } catch (error) {
+      console.error('Error updating settings:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    fetchNotificationCount();
+    fetchSettings();
+
+    // Set up polling for new notifications
+    const interval = setInterval(() => {
+      fetchNotificationCount();
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'urgent': return 'bg-red-100 dark:bg-red-900 border-red-500';
+      case 'high': return 'bg-orange-100 dark:bg-orange-900 border-orange-500';
+      case 'medium': return 'bg-blue-100 dark:bg-blue-900 border-blue-500';
+      case 'low': return 'bg-gray-100 dark:bg-gray-800 border-gray-500';
+      default: return 'bg-gray-100 dark:bg-gray-800 border-gray-500';
+    }
+  };
+
+  const getTypeIcon = (type) => {
+    switch (type) {
+      case 'lead_created': return '👤';
+      case 'lead_status_changed': return '🔄';
+      case 'lead_assigned': return '👥';
+      case 'follow_up_due': return '⏰';
+      case 'deal_won': return '🎉';
+      case 'deal_lost': return '😞';
+      case 'high_value_lead': return '💰';
+      default: return '📌';
+    }
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = (now - date) / (1000 * 60 * 60);
+
+    if (diffInHours < 1) {
+      return 'Agora há pouco';
+    } else if (diffInHours < 24) {
+      return `${Math.floor(diffInHours)}h atrás`;
+    } else {
+      return date.toLocaleDateString('pt-BR');
+    }
+  };
+
+  if (showSettings) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Configurações de Notificação</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Configure quais eventos devem gerar notificações
+            </p>
+          </div>
+          <button
+            onClick={() => setShowSettings(false)}
+            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            ← Voltar
+          </button>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+          <div className="space-y-4">
+            {Object.entries({
+              lead_created: 'Novos leads criados',
+              lead_status_changed: 'Mudanças de status',
+              lead_assigned: 'Leads atribuídos a mim',
+              follow_up_due: 'Follow-ups pendentes',
+              high_value_leads: 'Leads de alto valor',
+              deal_closed: 'Negócios fechados',
+              email_notifications: 'Notificações por email',
+              push_notifications: 'Notificações push'
+            }).map(([key, label]) => (
+              <div key={key} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                <span className="text-gray-900 dark:text-white font-medium">{label}</span>
+                <button
+                  onClick={() => {
+                    const newSettings = { ...settings, [key]: !settings[key] };
+                    setSettings(newSettings);
+                    updateSettings(newSettings);
+                  }}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    settings[key] ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      settings[key] ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Central de Notificações</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {unreadCount > 0 ? `${unreadCount} notificações não lidas` : 'Todas as notificações foram lidas'}
+          </p>
+        </div>
+
+        <div className="flex space-x-3">
+          {unreadCount > 0 && (
+            <button
+              onClick={markAllAsRead}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+            >
+              ✓ Marcar todas como lidas
+            </button>
+          )}
+          <button
+            onClick={() => setShowSettings(true)}
+            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
+          >
+            ⚙️ Configurações
+          </button>
+          <button
+            onClick={fetchNotifications}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+          >
+            🔄 Atualizar
+          </button>
+        </div>
+      </div>
+
+      {/* Notifications List */}
+      <div className="space-y-3">
+        {loading ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 text-center">
+            <div className="text-6xl mb-4">🔔</div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              Nenhuma notificação
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              Você está em dia! Não há notificações no momento.
+            </p>
+          </div>
+        ) : (
+          notifications.map((notification) => (
+            <div
+              key={notification.id}
+              className={`p-4 rounded-xl border-l-4 transition-all duration-200 ${
+                getPriorityColor(notification.priority)
+              } ${
+                !notification.is_read 
+                  ? 'bg-white dark:bg-gray-800 shadow-lg' 
+                  : 'bg-gray-50 dark:bg-gray-800/50 opacity-75'
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-start space-x-3 flex-1">
+                  <div className="text-2xl">
+                    {getTypeIcon(notification.type)}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2">
+                      <h4 className="font-semibold text-gray-900 dark:text-white">
+                        {notification.title}
+                      </h4>
+                      {!notification.is_read && (
+                        <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
+                      )}
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-300 mt-1">
+                      {notification.message}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      {formatDate(notification.created_at)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  {!notification.is_read && (
+                    <button
+                      onClick={() => markAsRead(notification.id)}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                      title="Marcar como lida"
+                    >
+                      ✓
+                    </button>
+                  )}
+                  <button
+                    onClick={() => deleteNotification(notification.id)}
+                    className="text-red-600 hover:text-red-800 text-sm"
+                    title="Excluir"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+
 // Main Dashboard Component with Navigation
 const MainDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
