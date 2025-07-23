@@ -12,7 +12,7 @@ import os
 import time
 
 # Get backend URL from frontend .env file
-BACKEND_URL = "https://abf9d67a-ff8e-4cad-8bbd-422300c684d2.preview.emergentagent.com/api"
+BACKEND_URL = "https://ee688513-1f3a-4eae-b37b-1702e9341a18.preview.emergentagent.com/api"
 
 class ThemeWebhookTester:
     def __init__(self):
