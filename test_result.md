@@ -323,27 +323,33 @@ test_plan:
 frontend:
   - task: "Calendar UI"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Implemented Calendar component with Google Calendar connection UI and events display"
+        - working: true
+          agent: "testing"
+          comment: "✅ TESTED SUCCESSFULLY: Calendar UI fully functional - Navigation tab working, Calendar page loads correctly with title 'Calendário', Google Calendar connection button present, Events display area working, Clean and professional interface design"
 
   - task: "Advanced Dashboard UI"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Implemented advanced dashboard with stats cards, charts, recent activities, top sources"
+        - working: true
+          agent: "testing"
+          comment: "✅ TESTED SUCCESSFULLY: Advanced Dashboard UI fully functional - 4 main stats cards (Total de Leads, Taxa de Conversão, Ticket Médio, Pipeline Valor), Status distribution chart working, Recent activities feed displaying properly, Top sources section showing lead sources with values, Professional layout with proper spacing and colors, Responsive design working on different screen sizes"
 
 agent_communication:
     - agent: "main"
