@@ -487,6 +487,7 @@ class CRMBackendTester:
         self.test_advanced_automation_rules()
         self.test_advanced_dashboard_stats()
         self.test_activity_tracking()
+        self.test_notification_system()
         
         # Print summary
         print("\n" + "="*60)
