@@ -498,39 +498,39 @@ const LeadCard = ({ lead, onDragStart }) => {
   };
 
   const priorityColors = {
-    high: 'border-red-500 bg-red-50',
-    medium: 'border-yellow-500 bg-yellow-50',
-    low: 'border-green-500 bg-green-50'
+    high: 'border-red-500 bg-red-50 dark:bg-red-900/20',
+    medium: 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20',
+    low: 'border-green-500 bg-green-50 dark:bg-green-900/20'
   };
 
   return (
     <div
       draggable
       onDragStart={(e) => onDragStart(e, lead)}
-      className={`bg-white rounded-lg shadow-md p-4 mb-3 cursor-move hover:shadow-lg transition-all duration-200 border-l-4 ${priorityColors[lead.priority] || 'border-blue-500'}`}
+      className={`bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-3 cursor-move hover:shadow-lg transition-all duration-200 border-l-4 ${priorityColors[lead.priority] || 'border-blue-500'}`}
     >
       <div className="flex justify-between items-start mb-2">
-        <h4 className="font-semibold text-gray-900 text-sm">{lead.title}</h4>
+        <h4 className="font-semibold text-gray-900 dark:text-white text-sm">{lead.title}</h4>
         {lead.priority === 'high' && <span className="text-red-500 text-xs">🔴</span>}
       </div>
       
       {lead.company && (
-        <p className="text-sm text-gray-600 mb-1">🏢 {lead.company}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">🏢 {lead.company}</p>
       )}
       {lead.contact_name && (
-        <p className="text-sm text-gray-600 mb-1">👤 {lead.contact_name}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">👤 {lead.contact_name}</p>
       )}
       {lead.email && (
-        <p className="text-sm text-blue-600 mb-1">📧 {lead.email}</p>
+        <p className="text-sm text-blue-600 dark:text-blue-400 mb-1">📧 {lead.email}</p>
       )}
       {lead.value > 0 && (
-        <p className="text-sm font-semibold text-green-600 mb-1">
+        <p className="text-sm font-semibold text-green-600 dark:text-green-400 mb-1">
           💰 {formatCurrency(lead.value)}
         </p>
       )}
       
       {lead.next_follow_up && (
-        <p className="text-xs text-orange-600 mb-2">
+        <p className="text-xs text-orange-600 dark:text-orange-400 mb-2">
           🔔 Follow-up: {formatDate(lead.next_follow_up)}
         </p>
       )}
@@ -540,25 +540,25 @@ const LeadCard = ({ lead, onDragStart }) => {
           {lead.tags.slice(0, 3).map((tag, index) => (
             <span
               key={index}
-              className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
+              className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs px-2 py-1 rounded-full"
             >
               {tag}
             </span>
           ))}
           {lead.tags.length > 3 && (
-            <span className="text-xs text-gray-500">+{lead.tags.length - 3}</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">+{lead.tags.length - 3}</span>
           )}
         </div>
       )}
       
-      <div className="flex justify-between items-center text-xs text-gray-500 mt-2">
+      <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400 mt-2">
         <span>{formatDate(lead.created_at)}</span>
         <div className="flex items-center space-x-1">
           {lead.source && (
-            <span className="bg-gray-100 px-2 py-1 rounded text-xs">{lead.source}</span>
+            <span className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-xs">{lead.source}</span>
           )}
           {lead.assigned_to && (
-            <span className="bg-gray-100 px-2 py-1 rounded">👤</span>
+            <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">👤</span>
           )}
         </div>
       </div>
