@@ -1868,6 +1868,425 @@ const WebhookManager = () => {
       )}
     </div>
   );
+}};
+
+// Advanced Reports Component
+const AdvancedReports = () => {
+  const [reportData, setReportData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [filters, setFilters] = useState({
+    period: 'month',
+    start_date: null,
+    end_date: null,
+    user_id: null,
+    status: null
+  });
+  const [activeReportTab, setActiveReportTab] = useState('overview');
+
+  const fetchReports = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.post(`${API}/reports/advanced`, filters);
+      setReportData(response.data);
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const exportReport = async (format, type) => {
+    try {
+      const response = await axios.post(`${API}/reports/export`, {
+        format,
+        report_type: type,
+        filters
+      }, { responseType: 'blob' });
+      
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `report_${type}.${format}`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting report:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchReports();
+  }, [filters]);
+
+  const reportTabs = [
+    { id: 'overview', label: 'Visão Geral', icon: '📊' },
+    { id: 'funnel', label: 'Funil', icon: '🔥' },
+    { id: 'team', label: 'Equipe', icon: '👥' },
+    { id: 'trends', label: 'Tendências', icon: '📈' }
+  ];
+
+  // Prepare data for charts
+  const getChartData = () => {
+    if (!reportData) return {};
+
+    // Convert leads_by_period to chart data
+    const periodData = Object.entries(reportData.leads_by_period || {}).map(([period, count]) => ({
+      period,
+      leads: count
+    }));
+
+    // Convert funnel data
+    const funnelData = Object.entries(reportData.funnel_data || {}).map(([stage, data]) => ({
+      stage,
+      count: data.count,
+      conversion: data.conversion_rate,
+      name: stage.charAt(0).toUpperCase() + stage.slice(1)
+    }));
+
+    // Convert conversion rates for pie chart
+    const conversionData = Object.entries(reportData.conversion_rates || {}).map(([status, rate]) => ({
+      name: status.charAt(0).toUpperCase() + status.slice(1),
+      value: rate
+    }));
+
+    // Convert lead sources
+    const sourceData = Object.entries(reportData.lead_sources || {}).map(([source, count]) => ({
+      name: source,
+      value: count
+    }));
+
+    return { periodData, funnelData, conversionData, sourceData };
+  };
+
+  const { periodData, funnelData, conversionData, sourceData } = getChartData();
+
+  const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00ff00', '#ff00ff'];
+
+  const renderOverview = () => (
+    <div className="space-y-6">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total de Leads</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{reportData?.total_leads || 0}</p>
+            </div>
+            <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-full">
+              <span className="text-2xl">👥</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Ticket Médio</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                R$ {reportData?.avg_deal_size?.toFixed(2) || '0,00'}
+              </p>
+            </div>
+            <div className="bg-green-100 dark:bg-green-900 p-3 rounded-full">
+              <span className="text-2xl">💰</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pipeline Total</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                R$ {reportData?.total_pipeline_value?.toFixed(2) || '0,00'}
+              </p>
+            </div>
+            <div className="bg-purple-100 dark:bg-purple-900 p-3 rounded-full">
+              <span className="text-2xl">🎯</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Taxa Conversão</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {reportData?.conversion_rates?.fechado_ganho?.toFixed(1) || 0}%
+              </p>
+            </div>
+            <div className="bg-red-100 dark:bg-red-900 p-3 rounded-full">
+              <span className="text-2xl">📈</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Leads by Period */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Leads por Período</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={periodData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="period" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="leads" stroke="#8884d8" strokeWidth={2} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Conversion Rates */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Distribuição por Status</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={conversionData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, value }) => `${name}: ${value.toFixed(1)}%`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {conversionData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderFunnel = () => (
+    <div className="space-y-6">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Funil de Vendas</h3>
+        <ResponsiveContainer width="100%" height={400}>
+          <BarChart data={funnelData} layout="horizontal">
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis type="number" />
+            <YAxis dataKey="name" type="category" width={100} />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="count" fill="#8884d8" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Origens dos Leads</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <PieChart>
+            <Pie
+              data={sourceData}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              label={({ name, value }) => `${name}: ${value}`}
+              outerRadius={80}
+              fill="#82ca9d"
+              dataKey="value"
+            >
+              {sourceData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+              ))}
+            </Pie>
+            <Tooltip />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+
+  const renderTeam = () => (
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+      <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Performance da Equipe</h3>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-900">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Usuário
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Leads
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Valor Total
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Ticket Médio
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            {reportData?.team_performance?.map((member, index) => (
+              <tr key={index}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                  {member.user}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {member.leads_count}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  R$ {member.total_value.toFixed(2)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  R$ {member.avg_deal_size.toFixed(2)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  const renderTrends = () => (
+    <div className="space-y-6">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Comparação de Períodos</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="text-center">
+            <p className="text-sm text-gray-600 dark:text-gray-400">Período Atual</p>
+            <p className="text-2xl font-bold text-blue-600">
+              {reportData?.period_comparison?.current_period?.leads || 0} leads
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm text-gray-600 dark:text-gray-400">Período Anterior</p>
+            <p className="text-2xl font-bold text-gray-600">
+              {reportData?.period_comparison?.previous_period?.leads || 0} leads
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm text-gray-600 dark:text-gray-400">Variação</p>
+            <p className="text-2xl font-bold text-green-600">
+              {reportData?.period_comparison ? 
+                (((reportData.period_comparison.current_period.leads - reportData.period_comparison.previous_period.leads) / reportData.period_comparison.previous_period.leads) * 100).toFixed(1) 
+                : 0}%
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Tempo Médio por Etapa</h3>
+        <div className="space-y-3">
+          {Object.entries(reportData?.avg_time_by_stage || {}).map(([stage, days]) => (
+            <div key={stage} className="flex justify-between items-center">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
+                {stage}
+              </span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                {days} dias
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderContent = () => {
+    switch (activeReportTab) {
+      case 'overview':
+        return renderOverview();
+      case 'funnel':
+        return renderFunnel();
+      case 'team':
+        return renderTeam();
+      case 'trends':
+        return renderTrends();
+      default:
+        return renderOverview();
+    }
+  };
+
+  if (loading && !reportData) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header with filters and export */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Relatórios Avançados</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Análises detalhadas e insights do seu pipeline
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+          {/* Period Filter */}
+          <select
+            value={filters.period}
+            onChange={(e) => setFilters({ ...filters, period: e.target.value })}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          >
+            <option value="day">Diário</option>
+            <option value="week">Semanal</option>
+            <option value="month">Mensal</option>
+            <option value="quarter">Trimestral</option>
+            <option value="year">Anual</option>
+          </select>
+
+          {/* Export Buttons */}
+          <div className="flex space-x-2">
+            <button
+              onClick={() => exportReport('csv', 'leads')}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
+            >
+              📄 Exportar Leads
+            </button>
+            <button
+              onClick={() => exportReport('csv', 'performance')}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+            >
+              📊 Exportar Métricas
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Report Tabs */}
+      <div className="flex space-x-1 border-b border-gray-200 dark:border-gray-700">
+        {reportTabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveReportTab(tab.id)}
+            className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium transition-colors ${
+              activeReportTab === tab.id
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <span>{tab.icon}</span>
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Report Content */}
+      <div>
+        {renderContent()}
+      </div>
+    </div>
+  );
 };
 
 // Main Dashboard Component with Navigation
