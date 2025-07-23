@@ -1615,6 +1615,298 @@ async def export_report(
         logger.error(f"Error exporting report: {e}")
         raise HTTPException(status_code=500, detail="Error exporting report")
 
+# Notification Helper Functions
+async def create_notification(
+    user_id: str, 
+    notification_type: NotificationType, 
+    title: str, 
+    message: str,
+    priority: NotificationPriority = NotificationPriority.MEDIUM,
+    lead_id: Optional[str] = None,
+    action_url: Optional[str] = None,
+    metadata: Dict[str, Any] = None
+):
+    """Helper function to create notifications"""
+    try:
+        # Check user notification settings
+        settings = await db.notification_settings.find_one({"user_id": user_id})
+        if not settings:
+            # Create default settings
+            default_settings = NotificationSettings(user_id=user_id)
+            await db.notification_settings.insert_one(default_settings.dict())
+            settings = default_settings.dict()
+        
+        # Check if this type of notification is enabled
+        notification_enabled = True
+        if notification_type == NotificationType.LEAD_CREATED:
+            notification_enabled = settings.get("lead_created", True)
+        elif notification_type == NotificationType.LEAD_STATUS_CHANGED:
+            notification_enabled = settings.get("lead_status_changed", True)
+        elif notification_type == NotificationType.LEAD_ASSIGNED:
+            notification_enabled = settings.get("lead_assigned", True)
+        elif notification_type == NotificationType.FOLLOW_UP_DUE:
+            notification_enabled = settings.get("follow_up_due", True)
+        elif notification_type == NotificationType.HIGH_VALUE_LEAD:
+            notification_enabled = settings.get("high_value_leads", True)
+        elif notification_type in [NotificationType.DEAL_WON, NotificationType.DEAL_LOST]:
+            notification_enabled = settings.get("deal_closed", True)
+        
+        if not notification_enabled:
+            return None
+        
+        notification = Notification(
+            user_id=user_id,
+            type=notification_type,
+            title=title,
+            message=message,
+            priority=priority,
+            lead_id=lead_id,
+            action_url=action_url,
+            metadata=metadata or {}
+        )
+        
+        await db.notifications.insert_one(notification.dict())
+        logger.info(f"Notification created for user {user_id}: {title}")
+        return notification
+        
+    except Exception as e:
+        logger.error(f"Error creating notification: {e}")
+        return None
+
+async def notify_lead_event(lead: dict, event_type: str, user_id: str, old_status: str = None):
+    """Create notifications for lead events"""
+    try:
+        lead_title = lead.get("title", "Lead sem título")
+        lead_value = lead.get("value", 0)
+        
+        if event_type == "created":
+            await create_notification(
+                user_id=user_id,
+                notification_type=NotificationType.LEAD_CREATED,
+                title="Novo Lead Criado",
+                message=f"Lead '{lead_title}' foi criado com valor de R$ {lead_value:.2f}",
+                priority=NotificationPriority.MEDIUM,
+                lead_id=lead.get("id"),
+                action_url=f"/kanban#{lead.get('id')}"
+            )
+            
+            # Check for high value lead  
+            if lead_value > 10000:
+                await create_notification(
+                    user_id=user_id,
+                    notification_type=NotificationType.HIGH_VALUE_LEAD,
+                    title="Lead de Alto Valor!",
+                    message=f"Lead '{lead_title}' tem valor alto: R$ {lead_value:.2f}",
+                    priority=NotificationPriority.HIGH,
+                    lead_id=lead.get("id"),
+                    action_url=f"/kanban#{lead.get('id')}"
+                )
+        
+        elif event_type == "status_changed":
+            new_status = lead.get("status")
+            await create_notification(
+                user_id=user_id,
+                notification_type=NotificationType.LEAD_STATUS_CHANGED,
+                title="Status do Lead Alterado",
+                message=f"Lead '{lead_title}' mudou de '{old_status}' para '{new_status}'",
+                priority=NotificationPriority.MEDIUM,
+                lead_id=lead.get("id"),
+                action_url=f"/kanban#{lead.get('id')}"
+            )
+            
+            # Special notifications for closed deals
+            if new_status == "fechado_ganho":
+                await create_notification(
+                    user_id=user_id,
+                    notification_type=NotificationType.DEAL_WON,
+                    title="🎉 Negócio Fechado!",
+                    message=f"Parabéns! Lead '{lead_title}' foi fechado com sucesso: R$ {lead_value:.2f}",
+                    priority=NotificationPriority.HIGH,
+                    lead_id=lead.get("id"),
+                    action_url=f"/kanban#{lead.get('id')}"
+                )
+            elif new_status == "fechado_perdido":
+                await create_notification(
+                    user_id=user_id,
+                    notification_type=NotificationType.DEAL_LOST,
+                    title="Negócio Perdido",
+                    message=f"Lead '{lead_title}' foi marcado como perdido",
+                    priority=NotificationPriority.MEDIUM,
+                    lead_id=lead.get("id"),
+                    action_url=f"/kanban#{lead.get('id')}"
+                )
+        
+        elif event_type == "assigned":
+            assigned_to = lead.get("assigned_to", "")
+            if assigned_to and assigned_to != "Não atribuído":
+                await create_notification(
+                    user_id=assigned_to,
+                    notification_type=NotificationType.LEAD_ASSIGNED,
+                    title="Lead Atribuído a Você",
+                    message=f"Lead '{lead_title}' foi atribuído a você",
+                    priority=NotificationPriority.MEDIUM,
+                    lead_id=lead.get("id"),
+                    action_url=f"/kanban#{lead.get('id')}"
+                )
+        
+    except Exception as e:
+        logger.error(f"Error creating lead notification: {e}")
+
+# Notification Routes
+@api_router.get("/notifications", response_model=List[Notification])
+async def get_notifications(
+    skip: int = 0,
+    limit: int = 50,
+    unread_only: bool = False,
+    current_user: User = Depends(get_current_user)
+):
+    """Get user notifications"""
+    try:
+        query = {"user_id": current_user.id}
+        if unread_only:
+            query["is_read"] = False
+        
+        notifications = await db.notifications.find(
+            query,
+            {"_id": 0}
+        ).sort("created_at", -1).skip(skip).limit(limit).to_list(None)
+        
+        return [Notification(**notification) for notification in notifications]
+        
+    except Exception as e:
+        logger.error(f"Error fetching notifications: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching notifications")
+
+@api_router.get("/notifications/count")
+async def get_notification_count(current_user: User = Depends(get_current_user)):
+    """Get notification counts"""
+    try:
+        total_count = await db.notifications.count_documents({"user_id": current_user.id})
+        unread_count = await db.notifications.count_documents({"user_id": current_user.id, "is_read": False})
+        
+        return {
+            "total": total_count,
+            "unread": unread_count
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting notification count: {e}")
+        raise HTTPException(status_code=500, detail="Error getting notification count")
+
+@api_router.put("/notifications/{notification_id}/read")
+async def mark_notification_read(
+    notification_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Mark notification as read"""
+    try:
+        notification = await db.notifications.find_one({
+            "id": notification_id,
+            "user_id": current_user.id
+        })
+        
+        if not notification:
+            raise HTTPException(status_code=404, detail="Notification not found")
+        
+        await db.notifications.update_one(
+            {"id": notification_id},
+            {
+                "$set": {
+                    "is_read": True,
+                    "read_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        return {"message": "Notification marked as read"}
+        
+    except Exception as e:
+        logger.error(f"Error marking notification as read: {e}")
+        raise HTTPException(status_code=500, detail="Error updating notification")
+
+@api_router.put("/notifications/mark-all-read")
+async def mark_all_notifications_read(current_user: User = Depends(get_current_user)):
+    """Mark all notifications as read"""
+    try:
+        await db.notifications.update_many(
+            {"user_id": current_user.id, "is_read": False},
+            {
+                "$set": {
+                    "is_read": True,
+                    "read_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        return {"message": "All notifications marked as read"}
+        
+    except Exception as e:
+        logger.error(f"Error marking all notifications as read: {e}")
+        raise HTTPException(status_code=500, detail="Error updating notifications")
+
+@api_router.delete("/notifications/{notification_id}")
+async def delete_notification(
+    notification_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a notification"""
+    try:
+        result = await db.notifications.delete_one({
+            "id": notification_id,
+            "user_id": current_user.id
+        })
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Notification not found")
+        
+        return {"message": "Notification deleted"}
+        
+    except Exception as e:
+        logger.error(f"Error deleting notification: {e}")
+        raise HTTPException(status_code=500, detail="Error deleting notification")
+
+@api_router.get("/notifications/settings", response_model=NotificationSettings)
+async def get_notification_settings(current_user: User = Depends(get_current_user)):
+    """Get user notification settings"""
+    try:
+        settings = await db.notification_settings.find_one(
+            {"user_id": current_user.id},
+            {"_id": 0}
+        )
+        
+        if not settings:
+            # Create default settings
+            default_settings = NotificationSettings(user_id=current_user.id)
+            await db.notification_settings.insert_one(default_settings.dict())
+            return default_settings
+        
+        return NotificationSettings(**settings)
+        
+    except Exception as e:
+        logger.error(f"Error fetching notification settings: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching settings")
+
+@api_router.put("/notifications/settings")
+async def update_notification_settings(
+    settings_update: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Update user notification settings"""
+    try:
+        settings_update["updated_at"] = datetime.utcnow()
+        
+        await db.notification_settings.update_one(
+            {"user_id": current_user.id},
+            {"$set": settings_update},
+            upsert=True
+        )
+        
+        return {"message": "Notification settings updated"}
+        
+    except Exception as e:
+        logger.error(f"Error updating notification settings: {e}")
+        raise HTTPException(status_code=500, detail="Error updating settings")
+
 # Include the router in the main app
 app.include_router(api_router)
 
