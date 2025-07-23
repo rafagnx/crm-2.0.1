@@ -69,7 +69,7 @@ class CRMBackendTester:
         
         # Setup authentication using admin credentials as specified in the request
         login_data = {
-            "email": "admin@admin.com",
+            "email": "admin@descomplica.com",
             "password": "Rafa040388?"
         }
         
