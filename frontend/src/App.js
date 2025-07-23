@@ -2648,6 +2648,8 @@ const MainDashboard = () => {
         return <KanbanBoard />;
       case 'reports':
         return <AdvancedReports />;
+      case 'notifications':
+        return <NotificationCenter />;
       case 'automations':
         return <Automations />;
       case 'themes':
