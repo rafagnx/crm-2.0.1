@@ -878,6 +878,15 @@ async def update_lead(
             "old_status": old_status,
             "new_status": new_status
         }, current_user.id)
+        
+        # Create status change notification
+        await notify_lead_event(updated_lead, "status_changed", current_user.id, old_status)
+    
+    # Check for assignment change
+    old_assigned = lead.get("assigned_to", "")
+    new_assigned = update_data.get("assigned_to", old_assigned)
+    if old_assigned != new_assigned and new_assigned and new_assigned != "Não atribuído":
+        await notify_lead_event(updated_lead, "assigned", new_assigned)
     
     # Trigger general update webhook
     await trigger_webhooks(WebhookEvent.LEAD_UPDATED, updated_lead, current_user.id)
