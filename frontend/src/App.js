@@ -578,19 +578,19 @@ const KanbanColumn = ({ column, onDrop, onDragOver }) => {
 
   return (
     <div
-      className="bg-gray-50 rounded-lg p-4 min-h-96 min-w-80 border border-gray-200"
+      className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 min-h-96 min-w-80 border border-gray-200 dark:border-gray-700 transition-colors duration-200"
       onDrop={(e) => onDrop(e, column.status)}
       onDragOver={onDragOver}
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
-          <h3 className="font-bold text-lg text-gray-800">{column.title}</h3>
+          <h3 className="font-bold text-lg text-gray-800 dark:text-white">{column.title}</h3>
           <span
             className="w-4 h-4 rounded-full"
             style={{ backgroundColor: column.color }}
           ></span>
         </div>
-        <span className="text-sm font-medium text-gray-600">
+        <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
           {column.leads.length}
         </span>
       </div>
