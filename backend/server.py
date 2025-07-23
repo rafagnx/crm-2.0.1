@@ -138,6 +138,42 @@ class LeadCreate(BaseModel):
     expected_close_date: Optional[datetime] = None
     source: str = ""
 
+# Advanced Reports Models
+class ReportFilter(BaseModel):
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    period: Optional[str] = "month"  # day, week, month, quarter, year
+    user_id: Optional[str] = None
+    status: Optional[str] = None
+
+class AdvancedStats(BaseModel):
+    # Métricas principais
+    total_leads: int
+    leads_by_period: Dict[str, int]
+    conversion_rates: Dict[str, float]
+    avg_deal_size: float
+    total_pipeline_value: float
+    
+    # Funil de vendas
+    funnel_data: Dict[str, Dict[str, Union[int, float]]]
+    
+    # Performance por período
+    period_comparison: Dict[str, Dict[str, Union[int, float]]]
+    
+    # Métricas por usuário/equipe
+    team_performance: List[Dict[str, Union[str, int, float]]]
+    
+    # Origem dos leads
+    lead_sources: Dict[str, int]
+    
+    # Tempo médio por etapa
+    avg_time_by_stage: Dict[str, float]
+
+class ExportRequest(BaseModel):
+    format: str  # "pdf", "excel", "csv"
+    report_type: str  # "leads", "performance", "funnel"
+    filters: ReportFilter
+
 class LeadUpdate(BaseModel):
     title: Optional[str] = None
     company: Optional[str] = None
