@@ -2000,11 +2000,13 @@ function App() {
   );
 }
 
-// Root App with AuthProvider
+// Root App with AuthProvider and ThemeProvider
 export default function RootApp() {
   return (
-    <AuthProvider>
-      <App />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
