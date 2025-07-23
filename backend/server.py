@@ -551,6 +551,126 @@ async def process_automation_rules(lead_id: str, new_status: LeadStatus, user_id
             )
             await db.activities.insert_one(activity.dict())
 
+# Notification helpers
+async def create_notification(user_id: str, notification_type: NotificationType, title: str, message: str, priority: NotificationPriority = NotificationPriority.MEDIUM, data: Dict = {}):
+    """Create a new notification for a user"""
+    notification = Notification(
+        user_id=user_id,
+        type=notification_type,
+        priority=priority,
+        title=title,
+        message=message,
+        data=data
+    )
+    await db.notifications.insert_one(notification.dict())
+    return notification
+
+async def create_lead_notification(lead_id: str, user_id: str, notification_type: NotificationType, action: str, lead_title: str = None):
+    """Create notifications related to lead events"""
+    lead = await db.leads.find_one({"id": lead_id})
+    if not lead:
+        return
+    
+    lead_title = lead_title or lead.get('title', 'Lead')
+    
+    notifications_config = {
+        NotificationType.LEAD_CREATED: {
+            "title": "🎯 Novo Lead Criado",
+            "message": f"Lead '{lead_title}' foi criado com sucesso",
+            "priority": NotificationPriority.MEDIUM
+        },
+        NotificationType.LEAD_MOVED: {
+            "title": "📊 Lead Movido",
+            "message": f"Lead '{lead_title}' foi movido para {action}",
+            "priority": NotificationPriority.LOW
+        },
+        NotificationType.LEAD_HIGH_VALUE: {
+            "title": "💰 Lead de Alto Valor",
+            "message": f"Lead '{lead_title}' tem valor superior a R$ 10.000",
+            "priority": NotificationPriority.HIGH
+        },
+        NotificationType.LEAD_OVERDUE: {
+            "title": "⚠️ Lead Vencido",
+            "message": f"Lead '{lead_title}' está sem movimentação há mais de 7 dias",
+            "priority": NotificationPriority.URGENT
+        }
+    }
+    
+    config = notifications_config.get(notification_type)
+    if config:
+        await create_notification(
+            user_id=user_id,
+            notification_type=notification_type,
+            title=config["title"],
+            message=config["message"],
+            priority=config["priority"],
+            data={"lead_id": lead_id, "lead_title": lead_title}
+        )
+
+async def create_system_notification(user_id: str, title: str, message: str, priority: NotificationPriority = NotificationPriority.MEDIUM):
+    """Create system notifications"""
+    await create_notification(
+        user_id=user_id,
+        notification_type=NotificationType.SYSTEM_ALERT,
+        title=title,
+        message=message,
+        priority=priority
+    )
+
+async def notify_lead_overdue():
+    """Check for overdue leads and create notifications"""
+    seven_days_ago = datetime.utcnow() - timedelta(days=7)
+    
+    # Find leads without recent activity
+    pipeline = [
+        {
+            "$lookup": {
+                "from": "activities",
+                "let": {"lead_id": "$id"},
+                "pipeline": [
+                    {
+                        "$match": {
+                            "$expr": {"$eq": ["$lead_id", "$$lead_id"]},
+                            "timestamp": {"$gte": seven_days_ago}
+                        }
+                    }
+                ],
+                "as": "recent_activities"
+            }
+        },
+        {
+            "$match": {
+                "status": {"$nin": ["fechado_ganho", "fechado_perdido"]},
+                "recent_activities": {"$size": 0}
+            }
+        }
+    ]
+    
+    overdue_leads = await db.leads.aggregate(pipeline).to_list(100)
+    
+    for lead in overdue_leads:
+        # Notify the assigned user or all managers
+        user_id = lead.get('assigned_to')
+        if not user_id:
+            # Get managers if no assigned user
+            managers = await db.users.find({"role": {"$in": ["admin", "manager"]}}).to_list(100)
+            for manager in managers:
+                await create_lead_notification(
+                    lead_id=lead["id"],
+                    user_id=manager["id"],
+                    notification_type=NotificationType.LEAD_OVERDUE,
+                    action="overdue",
+                    lead_title=lead.get('title')
+                )
+        else:
+            await create_lead_notification(
+                lead_id=lead["id"],
+                user_id=user_id,
+                notification_type=NotificationType.LEAD_OVERDUE,
+                action="overdue",
+                lead_title=lead.get('title')
+            )
+
 # Webhook helpers
 import asyncio
 import aiohttp
