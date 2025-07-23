@@ -366,6 +366,18 @@ frontend:
           agent: "main"
           comment: "Implementado sistema completo de notificações no backend: Modelos Notification com tipos (lead_created, lead_moved, lead_overdue, lead_high_value, task_created, task_overdue, automation_triggered, system_alert), endpoints CRUD (/api/notifications - GET, PATCH, DELETE), funcionalidades automáticas (create_lead_notification, create_system_notification, notify_lead_overdue), integração com eventos existentes (criação de leads, movimentação, leads de alto valor), sistema de prioridades (low, medium, high, urgent). Endpoints implementados: GET /api/notifications (com filtros), GET /api/notifications/count (contador não lidas), PATCH /api/notifications/{id} (marcar como lida), PATCH /api/notifications/mark-all-read, DELETE /api/notifications/{id}, POST /api/notifications/test"
 
+  - task: "Sistema de Notificações - Frontend"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementado sistema completo de notificações no frontend: Componente NotificationCenter com listagem de notificações, contador não lidas, sistema de prioridades visuais, formatação de tempo relativo, configurações de notificações, integração com polling automático a cada 30 segundos, ícones por tipo de notificação, ações de marcar como lida/excluir, navegação integrada no header principal. Corrigido case 'notifications' no renderContent para exibir o componente."
+
 agent_communication:
     - agent: "main"
       message: "User wants to focus on: 1) Temas & Personalização, 2) Relatórios Avançados, 3) Testar funcionalidades existentes, 4) Sistema de Notificações. NO Google Calendar or Email/WhatsApp integrations needed. Starting with testing existing drag & drop and dashboard functionalities."
