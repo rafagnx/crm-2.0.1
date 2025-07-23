@@ -179,11 +179,18 @@ class NotificationType(str, Enum):
     LEAD_CREATED = "lead_created"
     LEAD_UPDATED = "lead_updated"
     LEAD_STATUS_CHANGED = "lead_status_changed"
+    LEAD_MOVED = "lead_moved"
     LEAD_ASSIGNED = "lead_assigned"
+    LEAD_OVERDUE = "lead_overdue"
+    LEAD_HIGH_VALUE = "lead_high_value"
     FOLLOW_UP_DUE = "follow_up_due"
     DEAL_WON = "deal_won"
     DEAL_LOST = "deal_lost"
     HIGH_VALUE_LEAD = "high_value_lead"
+    TASK_CREATED = "task_created"
+    TASK_OVERDUE = "task_overdue"
+    AUTOMATION_TRIGGERED = "automation_triggered"
+    SYSTEM_ALERT = "system_alert"
 
 class NotificationPriority(str, Enum):
     LOW = "low"
