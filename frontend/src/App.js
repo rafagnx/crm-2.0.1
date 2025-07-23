@@ -1,5 +1,6 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import axios from 'axios';
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, FunnelChart, Funnel, LabelList, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
