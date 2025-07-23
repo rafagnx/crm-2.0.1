@@ -1338,23 +1338,17 @@ async def create_initial_users():
             await db.users.insert_one(admin_data)
             logger.info("Admin user created successfully")
         
-        # Check if support user exists
+        # Remove old admin user if it exists (cleanup)
+        old_admin_user = await db.users.find_one({"email": "admin"})
+        if old_admin_user:
+            await db.users.delete_one({"email": "admin"})
+            logger.info("Old admin user removed")
+        
+        # Remove support user if it exists (cleanup) 
         support_user = await db.users.find_one({"email": "suporte"})
-        if not support_user:
-            # Create support user  
-            support_password_hash = bcrypt.hashpw("25261020".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-            support_data = {
-                "id": str(uuid.uuid4()),
-                "email": "suporte",
-                "name": "Suporte",
-                "password_hash": support_password_hash,
-                "role": UserRole.MANAGER,
-                "created_at": datetime.utcnow(),
-                "is_active": True,
-                "google_tokens": None
-            }
-            await db.users.insert_one(support_data)
-            logger.info("Support user created successfully")
+        if support_user:
+            await db.users.delete_one({"email": "suporte"})
+            logger.info("Support user removed")
             
     except Exception as e:
         logger.error(f"Error creating initial users: {e}")
