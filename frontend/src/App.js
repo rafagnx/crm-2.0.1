@@ -1384,7 +1384,7 @@ const ThemeManager = () => {
               <div className="grid grid-cols-3 gap-4">
                 {Object.entries(newTheme.colors).map(([key, value]) => (
                   <div key={key}>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 capitalize">
                       {key.replace('_', ' ')}
                     </label>
                     <div className="flex items-center space-x-2">
