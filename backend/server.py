@@ -1154,6 +1154,15 @@ async def move_lead(
     if old_status != new_status:
         await process_automation_rules(lead_id, new_status, current_user.id)
         
+        # Create notification for lead movement
+        await create_lead_notification(
+            lead_id=lead_id,
+            user_id=current_user.id,
+            notification_type=NotificationType.LEAD_MOVED,
+            action=new_status,
+            lead_title=lead.get('title') if lead else None
+        )
+        
         # Get updated lead for webhook
         updated_lead = await db.leads.find_one({"id": lead_id})
         
