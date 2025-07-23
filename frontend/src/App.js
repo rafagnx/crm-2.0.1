@@ -1890,6 +1890,8 @@ const MainDashboard = () => {
         return <Dashboard />;
       case 'kanban':
         return <KanbanBoard />;
+      case 'reports':
+        return <AdvancedReports />;
       case 'automations':
         return <Automations />;
       case 'themes':
