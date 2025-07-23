@@ -174,6 +174,65 @@ class ExportRequest(BaseModel):
     report_type: str  # "leads", "performance", "funnel"
     filters: ReportFilter
 
+# Notifications Models
+class NotificationType(str, Enum):
+    LEAD_CREATED = "lead_created"
+    LEAD_UPDATED = "lead_updated"
+    LEAD_STATUS_CHANGED = "lead_status_changed"
+    LEAD_ASSIGNED = "lead_assigned"
+    FOLLOW_UP_DUE = "follow_up_due"
+    DEAL_WON = "deal_won"
+    DEAL_LOST = "deal_lost"
+    HIGH_VALUE_LEAD = "high_value_lead"
+
+class NotificationPriority(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    URGENT = "urgent"
+
+class Notification(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    type: NotificationType
+    title: str
+    message: str
+    priority: NotificationPriority = NotificationPriority.MEDIUM
+    is_read: bool = False
+    lead_id: Optional[str] = None
+    action_url: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    read_at: Optional[datetime] = None
+    metadata: Dict[str, Any] = {}
+
+class NotificationCreate(BaseModel):
+    user_id: str
+    type: NotificationType
+    title: str
+    message: str
+    priority: NotificationPriority = NotificationPriority.MEDIUM
+    lead_id: Optional[str] = None
+    action_url: Optional[str] = None
+    metadata: Dict[str, Any] = {}
+
+class NotificationUpdate(BaseModel):
+    is_read: Optional[bool] = None
+    read_at: Optional[datetime] = None
+
+class NotificationSettings(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    lead_created: bool = True
+    lead_status_changed: bool = True
+    lead_assigned: bool = True
+    follow_up_due: bool = True
+    high_value_leads: bool = True
+    deal_closed: bool = True
+    email_notifications: bool = False
+    push_notifications: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
 class LeadUpdate(BaseModel):
     title: Optional[str] = None
     company: Optional[str] = None
