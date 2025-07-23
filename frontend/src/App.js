@@ -299,12 +299,12 @@ const AuthForm = () => {
 
 // Stats Card Component
 const StatsCard = ({ title, value, icon, color, subtitle }) => (
-  <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-100">
+  <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-100 dark:border-gray-700 transition-colors duration-200">
     <div className="flex items-center justify-between">
       <div>
-        <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
+        <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">{title}</p>
         <p className={`text-2xl font-bold ${color}`}>{value}</p>
-        {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
+        {subtitle && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{subtitle}</p>}
       </div>
       <div className={`text-3xl ${color}`}>
         {icon}
