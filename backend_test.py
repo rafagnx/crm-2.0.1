@@ -306,6 +306,168 @@ class CRMBackendTester:
         if self.test_results[category]["status"] != "FAILED":
             self.test_results[category]["status"] = "PASSED"
     
+    def test_notification_system(self):
+        """Test Notification System endpoints and functionality"""
+        print("\n🔔 Testing Notification System...")
+        category = "notification_system"
+        
+        # Test 1: Create test notification endpoint
+        response = self.make_request("POST", "/notifications/test")
+        if response and response.status_code == 200:
+            self.log_result(category, "Test notification creation endpoint working")
+        else:
+            self.log_result(category, f"Test notification creation failed - Status: {response.status_code if response else 'No response'}", False)
+        
+        # Test 2: Get notifications list
+        response = self.make_request("GET", "/notifications")
+        notifications = []
+        if response and response.status_code == 200:
+            notifications = response.json()
+            self.log_result(category, f"Notifications list retrieval working - Found {len(notifications)} notifications")
+        else:
+            self.log_result(category, f"Notifications list retrieval failed - Status: {response.status_code if response else 'No response'}", False)
+        
+        # Test 3: Get unread notifications count
+        response = self.make_request("GET", "/notifications/count")
+        if response and response.status_code == 200:
+            count_data = response.json()
+            unread_count = count_data.get("unread_count", 0)
+            self.log_result(category, f"Unread notifications count working - {unread_count} unread")
+        else:
+            self.log_result(category, f"Unread notifications count failed - Status: {response.status_code if response else 'No response'}", False)
+        
+        # Test 4: Mark notification as read (if we have notifications)
+        if notifications:
+            notification_id = notifications[0].get("id")
+            if notification_id:
+                update_data = {"is_read": True}
+                response = self.make_request("PATCH", f"/notifications/{notification_id}", update_data)
+                if response and response.status_code == 200:
+                    self.log_result(category, "Mark notification as read working")
+                else:
+                    self.log_result(category, f"Mark notification as read failed - Status: {response.status_code if response else 'No response'}", False)
+        
+        # Test 5: Mark all notifications as read
+        response = self.make_request("PATCH", "/notifications/mark-all-read")
+        if response and response.status_code == 200:
+            result = response.json()
+            self.log_result(category, f"Mark all notifications as read working - {result.get('message', 'Success')}")
+        else:
+            self.log_result(category, f"Mark all notifications as read failed - Status: {response.status_code if response else 'No response'}", False)
+        
+        # Test 6: Create a high-value lead to test automatic high-value notification
+        high_value_lead_data = {
+            "title": "Enterprise Cloud Migration",
+            "company": "MegaCorp Solutions",
+            "contact_name": "David Rodriguez",
+            "email": "david.rodriguez@megacorp.com",
+            "phone": "+1-555-0199",
+            "status": "novo",
+            "tags": ["enterprise", "cloud", "high-value"],
+            "notes": "Major cloud migration project worth R$ 150,000",
+            "value": 150000.0,  # High value ≥ R$ 10,000
+            "priority": "high",
+            "source": "referral"
+        }
+        
+        response = self.make_request("POST", "/leads", high_value_lead_data)
+        high_value_lead_id = None
+        if response and response.status_code == 200:
+            high_value_lead_id = response.json().get("id")
+            self.log_result(category, f"High-value lead created for testing - ID: {high_value_lead_id}")
+            
+            # Check if high-value notification was created automatically
+            import time
+            time.sleep(2)  # Wait a moment for notification to be created
+            
+            response = self.make_request("GET", "/notifications?is_read=false")
+            if response and response.status_code == 200:
+                recent_notifications = response.json()
+                high_value_notifications = [n for n in recent_notifications if n.get("type") == "lead_high_value"]
+                if high_value_notifications:
+                    self.log_result(category, "High-value lead notification created automatically")
+                else:
+                    self.log_result(category, "High-value lead notification not found", False)
+        else:
+            self.log_result(category, f"High-value lead creation failed - Status: {response.status_code if response else 'No response'}", False)
+        
+        # Test 7: Test lead movement notification
+        if high_value_lead_id:
+            move_data = {
+                "lead_id": high_value_lead_id,
+                "new_status": "qualificado",
+                "new_position": 0
+            }
+            
+            response = self.make_request("POST", "/kanban/move", move_data)
+            if response and response.status_code == 200:
+                self.log_result(category, "Lead movement successful for notification testing")
+                
+                # Check if movement notification was created
+                import time
+                time.sleep(2)  # Wait a moment for notification to be created
+                
+                response = self.make_request("GET", "/notifications?is_read=false")
+                if response and response.status_code == 200:
+                    recent_notifications = response.json()
+                    move_notifications = [n for n in recent_notifications if n.get("type") == "lead_moved"]
+                    if move_notifications:
+                        self.log_result(category, "Lead movement notification created automatically")
+                    else:
+                        self.log_result(category, "Lead movement notification not found", False)
+        
+        # Test 8: Delete notification (if we have any)
+        response = self.make_request("GET", "/notifications")
+        if response and response.status_code == 200:
+            notifications = response.json()
+            if notifications:
+                notification_id = notifications[0].get("id")
+                if notification_id:
+                    response = self.make_request("DELETE", f"/notifications/{notification_id}")
+                    if response and response.status_code == 200:
+                        self.log_result(category, "Notification deletion working")
+                    else:
+                        self.log_result(category, f"Notification deletion failed - Status: {response.status_code if response else 'No response'}", False)
+        
+        # Test 9: Test notification filtering
+        response = self.make_request("GET", "/notifications?is_read=true")
+        if response and response.status_code == 200:
+            read_notifications = response.json()
+            self.log_result(category, f"Notification filtering (read) working - {len(read_notifications)} read notifications")
+        else:
+            self.log_result(category, f"Notification filtering failed - Status: {response.status_code if response else 'No response'}", False)
+        
+        response = self.make_request("GET", "/notifications?is_read=false")
+        if response and response.status_code == 200:
+            unread_notifications = response.json()
+            self.log_result(category, f"Notification filtering (unread) working - {len(unread_notifications)} unread notifications")
+        else:
+            self.log_result(category, f"Notification filtering failed - Status: {response.status_code if response else 'No response'}", False)
+        
+        # Test 10: Validate notification structure
+        response = self.make_request("GET", "/notifications")
+        if response and response.status_code == 200:
+            notifications = response.json()
+            if notifications:
+                notification = notifications[0]
+                required_fields = ["id", "user_id", "type", "title", "message", "priority", "is_read", "created_at"]
+                missing_fields = [field for field in required_fields if field not in notification]
+                
+                if not missing_fields:
+                    self.log_result(category, "Notification structure validation passed")
+                else:
+                    self.log_result(category, f"Notification structure missing fields: {missing_fields}", False)
+                
+                # Validate priority values
+                valid_priorities = ["low", "medium", "high", "urgent"]
+                if notification.get("priority") in valid_priorities:
+                    self.log_result(category, f"Notification priority system working - Priority: {notification.get('priority')}")
+                else:
+                    self.log_result(category, f"Invalid notification priority: {notification.get('priority')}", False)
+        
+        if self.test_results[category]["status"] != "FAILED":
+            self.test_results[category]["status"] = "PASSED"
+    
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting CRM Backend API Tests...")
