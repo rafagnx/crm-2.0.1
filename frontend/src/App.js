@@ -1928,7 +1928,7 @@ const AdvancedReports = () => {
 
   // Prepare data for charts
   const getChartData = () => {
-    if (!reportData) return {};
+    if (!reportData) return { periodData: [], funnelData: [], conversionData: [], sourceData: [] };
 
     // Convert leads_by_period to chart data
     const periodData = Object.entries(reportData.leads_by_period || {}).map(([period, count]) => ({
@@ -1939,21 +1939,21 @@ const AdvancedReports = () => {
     // Convert funnel data
     const funnelData = Object.entries(reportData.funnel_data || {}).map(([stage, data]) => ({
       stage,
-      count: data.count,
-      conversion: data.conversion_rate,
+      count: data.count || 0,
+      conversion: data.conversion_rate || 0,
       name: stage.charAt(0).toUpperCase() + stage.slice(1)
     }));
 
     // Convert conversion rates for pie chart
     const conversionData = Object.entries(reportData.conversion_rates || {}).map(([status, rate]) => ({
       name: status.charAt(0).toUpperCase() + status.slice(1),
-      value: rate
+      value: rate || 0
     }));
 
     // Convert lead sources
     const sourceData = Object.entries(reportData.lead_sources || {}).map(([source, count]) => ({
-      name: source,
-      value: count
+      name: source || 'Não informado',
+      value: count || 0
     }));
 
     return { periodData, funnelData, conversionData, sourceData };
