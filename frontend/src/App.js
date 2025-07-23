@@ -2054,9 +2054,9 @@ const AdvancedReports = () => {
                 fill="#8884d8"
                 dataKey="value"
               >
-                {conversionData.map((entry, index) => (
+                {conversionData && conversionData.length > 0 ? conversionData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-                ))}
+                )) : null}
               </Pie>
               <Tooltip />
             </PieChart>
