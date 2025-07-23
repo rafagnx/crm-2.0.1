@@ -1884,6 +1884,7 @@ const WebhookManager = () => {
 const MainDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { logout, user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
