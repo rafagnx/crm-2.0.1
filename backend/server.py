@@ -604,7 +604,7 @@ async def create_lead_notification(lead_id: str, user_id: str, notification_type
             title=config["title"],
             message=config["message"],
             priority=config["priority"],
-            metadata={"lead_id": lead_id, "lead_title": lead_title}
+            data={"lead_id": lead_id, "lead_title": lead_title}
         )
 
 async def create_system_notification(user_id: str, title: str, message: str, priority: NotificationPriority = NotificationPriority.MEDIUM):
