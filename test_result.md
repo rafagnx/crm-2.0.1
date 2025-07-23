@@ -155,6 +155,9 @@ backend:
         - working: true
           agent: "main"
           comment: "✅ TESTED SUCCESSFULLY: Kanban API returns 6 columns correctly structured, leads appear in correct columns"
+        - working: true
+          agent: "testing"
+          comment: "✅ RE-TESTED SUCCESSFULLY: Kanban Board API fully functional - 6 columns with proper structure (status, title, color, leads), All expected statuses present (novo, qualificado, proposta, negociacao, fechado_ganho, fechado_perdido), Lead positioning working correctly, Move functionality working (leads appear in correct columns after moves), Column organization and data integrity verified"
 
   - task: "Activity Tracking"
     implemented: true
