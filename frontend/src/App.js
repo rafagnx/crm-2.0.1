@@ -2129,7 +2129,7 @@ const AdvancedReports = () => {
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {reportData?.team_performance?.map((member, index) => (
+            {reportData?.team_performance?.length > 0 ? reportData.team_performance.map((member, index) => (
               <tr key={index}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                   {member.user}
@@ -2144,7 +2144,13 @@ const AdvancedReports = () => {
                   R$ {member.avg_deal_size.toFixed(2)}
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr>
+                <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                  Nenhum dado de performance disponível
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
