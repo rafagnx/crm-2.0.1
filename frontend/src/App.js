@@ -664,12 +664,12 @@ const NewLeadForm = ({ onClose, onSubmit }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-96 overflow-y-auto m-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-4xl max-h-96 overflow-y-auto m-4 border border-gray-200 dark:border-gray-700">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-gray-900">Novo Lead</h3>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Novo Lead</h3>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-xl"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-xl transition-colors duration-200"
           >
             ✕
           </button>
