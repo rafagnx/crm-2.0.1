@@ -1356,8 +1356,12 @@ async def get_advanced_reports(
         if filters.status:
             match_query["status"] = filters.status
 
+        # Log for debugging
+        logger.info(f"Report query: {match_query}")
+
         # Get all leads matching filters
         leads = await db.leads.find(match_query).to_list(None)
+        logger.info(f"Found {len(leads)} leads for report")
         
         # Calculate basic metrics
         total_leads = len(leads)
