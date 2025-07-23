@@ -355,10 +355,10 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Dashboard</h2>
-        <p className="text-gray-600">Visão geral dos seus leads e performance</p>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Dashboard</h2>
+        <p className="text-gray-600 dark:text-gray-300">Visão geral dos seus leads e performance</p>
       </div>
 
       {/* Stats Cards */}
