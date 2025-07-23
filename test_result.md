@@ -371,11 +371,11 @@ frontend:
 
   - task: "Sistema de Notificações - Frontend"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
@@ -383,6 +383,9 @@ frontend:
         - working: true
           agent: "testing"
           comment: "✅ BACKEND NOTIFICAÇÕES TESTADO E FUNCIONANDO: Sistema de notificações backend confirmado funcionando perfeitamente após correção do bug crítico (parâmetro 'data' alterado para 'metadata' na função create_lead_notification). Todos os endpoints CRUD, notificações automáticas para criação/movimentação de leads, sistema de prioridades e contador de não lidas operacionais. Pronto para teste do frontend."
+        - working: true
+          agent: "testing"
+          comment: "✅ SISTEMA DE NOTIFICAÇÕES FRONTEND FUNCIONANDO PERFEITAMENTE: Testado com credenciais corretas (admin@descomplica.com/Rafa040388?). NAVEGAÇÃO: Aba de notificações (🔔) funcionando corretamente. INTERFACE: Central de Notificações carregando com título, botões de Configurações e Atualizar funcionais. CONFIGURAÇÕES: Página de configurações com 8 toggles de preferências funcionando (novos leads, mudanças de status, leads atribuídos, follow-ups, alto valor, negócios fechados, email e push). AÇÕES: Botões de marcar como lida e excluir funcionando individualmente, botão de atualizar funcionando. CRIAÇÃO REAL: Criação de leads gera notificações automaticamente (testado com lead de R$ 25.000). BADGE: Implementado badge de contador na navegação (vermelho com contagem). POLLING: Sistema de auto-refresh a cada 30 segundos implementado. TIPOS: Notificações com ícones por tipo (👤 novo lead, 💰 alto valor) e formatação de tempo relativo. Sistema completo e production-ready."
 
 agent_communication:
     - agent: "main"
