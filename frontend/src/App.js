@@ -87,7 +87,7 @@ const AuthForm = () => {
     name: '',
     email: '',
     password: '',
-    role: 'user'
+    role: 'user' // Always user for new registrations
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -102,7 +102,8 @@ const AuthForm = () => {
       if (isLogin) {
         await login(formData.email, formData.password);
       } else {
-        await register(formData.name, formData.email, formData.password, formData.role);
+        // Force role to user for registrations
+        await register(formData.name, formData.email, formData.password, 'user');
       }
     } catch (error) {
       setError(error.response?.data?.detail || 'An error occurred');
@@ -112,84 +113,148 @@ const AuthForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {isLogin ? 'Entre na sua conta' : 'Criar nova conta'}
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            CRM Kanban - Simplifique sua gestão de leads
-          </p>
-        </div>
-        <form className="mt-8 space-y-6 bg-white p-8 rounded-lg shadow-lg" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-          
-          <div className="space-y-4">
-            {!isLogin && (
-              <input
-                type="text"
-                required
-                placeholder="Nome completo"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            )}
-            
-            <input
-              type="email"
-              required
-              placeholder="Email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            
-            <input
-              type="password"
-              required
-              placeholder="Senha"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            
-            {!isLogin && (
-              <select
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="user">Usuário</option>
-                <option value="manager">Gerente</option>
-                <option value="admin">Administrador</option>
-              </select>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 font-medium disabled:opacity-50"
-          >
-            {loading ? 'Processando...' : (isLogin ? 'Entrar' : 'Registrar')}
-          </button>
-
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 relative overflow-hidden">
+      {/* Background animated elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-10 left-10 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute top-20 right-10 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-2000"></div>
+        <div className="absolute bottom-10 left-20 w-72 h-72 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-4000"></div>
+      </div>
+      
+      <div className="relative z-10 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          {/* Logo and branding */}
           <div className="text-center">
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-blue-600 hover:text-blue-700 font-medium"
-            >
-              {isLogin ? 'Não tem conta? Registre-se' : 'Já tem conta? Entre'}
-            </button>
+            <div className="mx-auto h-20 w-20 bg-gradient-to-br from-blue-400 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-2xl">
+              <svg className="h-10 w-10 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <h2 className="text-4xl font-bold text-white mb-2">
+              CRM Descomplica
+            </h2>
+            <p className="text-xl text-indigo-200 mb-6">
+              {isLogin ? 'Bem-vindo de volta!' : 'Junte-se a nós!'}
+            </p>
+            <p className="text-sm text-indigo-300">
+              Sistema Kanban inteligente para gestão de leads
+            </p>
           </div>
-        </form>
+          
+          {/* Login Form */}
+          <div className="backdrop-blur-lg bg-white/10 p-8 rounded-3xl shadow-2xl border border-white/20">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="bg-red-500/20 border border-red-400/50 text-red-200 px-4 py-3 rounded-xl backdrop-blur-sm">
+                  {error}
+                </div>
+              )}
+              
+              <div className="space-y-4">
+                {!isLogin && (
+                  <div className="relative">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Nome completo"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-2xl placeholder-white/60 text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent backdrop-blur-sm transition-all duration-300"
+                    />
+                    <div className="absolute inset-y-0 right-0 pr-6 flex items-center">
+                      <svg className="h-5 w-5 text-white/40" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    placeholder={isLogin ? "Usuário ou Email" : "Email"}
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-2xl placeholder-white/60 text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent backdrop-blur-sm transition-all duration-300"
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-6 flex items-center">
+                    <svg className="h-5 w-5 text-white/40" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                    </svg>
+                  </div>
+                </div>
+                
+                <div className="relative">
+                  <input
+                    type="password"
+                    required
+                    placeholder="Senha"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-2xl placeholder-white/60 text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent backdrop-blur-sm transition-all duration-300"
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-6 flex items-center">
+                    <svg className="h-5 w-5 text-white/40" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                </div>
+                
+                {/* Role info for registration - showing it's automatically set to user */}
+                {!isLogin && (
+                  <div className="bg-blue-500/20 border border-blue-400/50 text-blue-200 px-4 py-3 rounded-xl backdrop-blur-sm text-sm">
+                    ℹ️ Novos usuários são registrados automaticamente como <strong>Usuário</strong>
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-2xl hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-blue-500/50 transition-all duration-300 font-semibold text-lg shadow-2xl disabled:opacity-50 transform hover:scale-105"
+              >
+                {loading ? (
+                  <div className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processando...
+                  </div>
+                ) : (
+                  isLogin ? '🚀 Entrar' : '✨ Registrar'
+                )}
+              </button>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLogin(!isLogin);
+                    setError('');
+                    setFormData({ name: '', email: '', password: '', role: 'user' });
+                  }}
+                  className="text-blue-300 hover:text-blue-200 font-medium text-lg transition-colors duration-200 underline decoration-2 underline-offset-4 hover:decoration-blue-300"
+                >
+                  {isLogin ? '✨ Não tem conta? Registre-se' : '🔐 Já tem conta? Entre'}
+                </button>
+              </div>
+              
+              {/* Demo users info */}
+              {isLogin && (
+                <div className="mt-6 p-4 bg-black/20 rounded-xl backdrop-blur-sm border border-white/10">
+                  <p className="text-white/80 text-sm text-center mb-2">👥 <strong>Usuários Demo:</strong></p>
+                  <div className="text-xs text-white/60 space-y-1">
+                    <p><strong>Admin:</strong> admin / Rafa040388?</p>
+                    <p><strong>Suporte:</strong> suporte / 25261020</p>
+                  </div>
+                </div>
+              )}
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   );
