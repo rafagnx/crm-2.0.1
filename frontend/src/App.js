@@ -1184,7 +1184,7 @@ const AutomationRuleForm = ({ onClose, onSubmit, statusOptions, actionOptions })
               <h4 className="font-medium text-gray-900">Parâmetros da Ação</h4>
               {selectedAction.params.map((param) => (
                 <div key={param.key}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{param.label}</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{param.label}</label>
                   <input
                     type={param.type}
                     value={formData.action_params[param.key] || ''}
