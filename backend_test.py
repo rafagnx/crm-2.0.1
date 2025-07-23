@@ -23,7 +23,8 @@ class CRMBackendTester:
             "google_calendar_integration": {"status": "PENDING", "details": []},
             "advanced_automation_rules": {"status": "PENDING", "details": []},
             "advanced_dashboard_stats": {"status": "PENDING", "details": []},
-            "activity_tracking": {"status": "PENDING", "details": []}
+            "activity_tracking": {"status": "PENDING", "details": []},
+            "notification_system": {"status": "PENDING", "details": []}
         }
     
     def log_result(self, category, message, success=True):
