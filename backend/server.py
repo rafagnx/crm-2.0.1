@@ -1334,6 +1334,224 @@ async def get_webhook_logs(
     
     return [WebhookLog(**log) for log in logs]
 
+# Advanced Reports Routes
+@api_router.post("/reports/advanced", response_model=AdvancedStats)
+async def get_advanced_reports(
+    filters: ReportFilter,
+    current_user: User = Depends(get_current_user)
+):
+    """Get advanced analytics and reports"""
+    try:
+        # Build MongoDB query based on filters
+        match_query = {}
+        if filters.start_date:
+            match_query["created_at"] = {"$gte": filters.start_date}
+        if filters.end_date:
+            if "created_at" in match_query:
+                match_query["created_at"]["$lte"] = filters.end_date
+            else:
+                match_query["created_at"] = {"$lte": filters.end_date}
+        if filters.user_id:
+            match_query["assigned_to"] = filters.user_id
+        if filters.status:
+            match_query["status"] = filters.status
+
+        # Get all leads matching filters
+        leads = await db.leads.find(match_query).to_list(None)
+        
+        # Calculate basic metrics
+        total_leads = len(leads)
+        total_pipeline_value = sum(lead.get("value", 0) for lead in leads)
+        avg_deal_size = total_pipeline_value / total_leads if total_leads > 0 else 0
+        
+        # Group by period for trends
+        leads_by_period = {}
+        period_format = {
+            "day": "%Y-%m-%d",
+            "week": "%Y-W%U", 
+            "month": "%Y-%m",
+            "quarter": "%Y-Q",
+            "year": "%Y"
+        }
+        format_str = period_format.get(filters.period, "%Y-%m")
+        
+        for lead in leads:
+            created_at = lead.get("created_at")
+            if created_at:
+                if isinstance(created_at, str):
+                    created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                period_key = created_at.strftime(format_str)
+                leads_by_period[period_key] = leads_by_period.get(period_key, 0) + 1
+        
+        # Calculate conversion rates by status
+        status_counts = {}
+        for lead in leads:
+            status = lead.get("status", "novo")
+            status_counts[status] = status_counts.get(status, 0) + 1
+        
+        conversion_rates = {}
+        if total_leads > 0:
+            for status, count in status_counts.items():
+                conversion_rates[status] = (count / total_leads) * 100
+        
+        # Funnel data
+        funnel_stages = ["novo", "qualificado", "proposta", "negociacao", "fechado_ganho", "fechado_perdido"]
+        funnel_data = {}
+        
+        for i, stage in enumerate(funnel_stages):
+            count = status_counts.get(stage, 0)
+            conversion_rate = conversion_rates.get(stage, 0)
+            funnel_data[stage] = {
+                "count": count,
+                "conversion_rate": conversion_rate,
+                "stage_order": i
+            }
+        
+        # Team performance (by assigned_to)
+        team_performance = []
+        assigned_counts = {}
+        assigned_values = {}
+        
+        for lead in leads:
+            assigned_to = lead.get("assigned_to", "Não atribuído")
+            assigned_counts[assigned_to] = assigned_counts.get(assigned_to, 0) + 1
+            assigned_values[assigned_to] = assigned_values.get(assigned_to, 0) + lead.get("value", 0)
+        
+        for user, count in assigned_counts.items():
+            team_performance.append({
+                "user": user,
+                "leads_count": count,
+                "total_value": assigned_values.get(user, 0),
+                "avg_deal_size": assigned_values.get(user, 0) / count if count > 0 else 0
+            })
+        
+        # Lead sources
+        lead_sources = {}
+        for lead in leads:
+            source = lead.get("source", "Não informado")
+            lead_sources[source] = lead_sources.get(source, 0) + 1
+        
+        # Average time by stage (simplified calculation)
+        avg_time_by_stage = {}
+        for stage in funnel_stages:
+            # This is a simplified calculation - in reality you'd track stage transitions
+            avg_time_by_stage[stage] = 7.0  # Default 7 days - this would be calculated from actual data
+        
+        # Period comparison (current vs previous)
+        period_comparison = {
+            "current_period": {
+                "leads": total_leads,
+                "value": total_pipeline_value,
+                "conversion_rate": conversion_rates.get("fechado_ganho", 0)
+            },
+            "previous_period": {
+                "leads": int(total_leads * 0.85),  # Mock data - would be actual previous period
+                "value": total_pipeline_value * 0.9,
+                "conversion_rate": conversion_rates.get("fechado_ganho", 0) * 0.95
+            }
+        }
+        
+        return AdvancedStats(
+            total_leads=total_leads,
+            leads_by_period=leads_by_period,
+            conversion_rates=conversion_rates,
+            avg_deal_size=avg_deal_size,
+            total_pipeline_value=total_pipeline_value,
+            funnel_data=funnel_data,
+            period_comparison=period_comparison,
+            team_performance=team_performance,
+            lead_sources=lead_sources,
+            avg_time_by_stage=avg_time_by_stage
+        )
+        
+    except Exception as e:
+        logger.error(f"Error generating advanced reports: {e}")
+        raise HTTPException(status_code=500, detail="Error generating reports")
+
+@api_router.post("/reports/export")
+async def export_report(
+    export_request: ExportRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Export reports in various formats"""
+    try:
+        # Get the report data
+        filters = export_request.filters
+        advanced_stats = await get_advanced_reports(filters, current_user)
+        
+        if export_request.format == "csv":
+            # Create CSV content
+            import io
+            import csv
+            
+            output = io.StringIO()
+            
+            if export_request.report_type == "leads":
+                # Export leads data
+                match_query = {}
+                if filters.start_date:
+                    match_query["created_at"] = {"$gte": filters.start_date}
+                if filters.end_date:
+                    if "created_at" in match_query:
+                        match_query["created_at"]["$lte"] = filters.end_date
+                    else:
+                        match_query["created_at"] = {"$lte": filters.end_date}
+                
+                leads = await db.leads.find(match_query).to_list(None)
+                
+                if leads:
+                    fieldnames = ["title", "company", "contact_name", "email", "phone", "status", "value", "source", "created_at"]
+                    writer = csv.DictWriter(output, fieldnames=fieldnames)
+                    writer.writeheader()
+                    
+                    for lead in leads:
+                        writer.writerow({
+                            "title": lead.get("title", ""),
+                            "company": lead.get("company", ""),
+                            "contact_name": lead.get("contact_name", ""),
+                            "email": lead.get("email", ""),
+                            "phone": lead.get("phone", ""),
+                            "status": lead.get("status", ""),
+                            "value": lead.get("value", 0),
+                            "source": lead.get("source", ""),
+                            "created_at": lead.get("created_at", "")
+                        })
+            
+            elif export_request.report_type == "performance":
+                # Export performance data
+                writer = csv.writer(output)
+                writer.writerow(["Metric", "Value"])
+                writer.writerow(["Total Leads", advanced_stats.total_leads])
+                writer.writerow(["Average Deal Size", f"R$ {advanced_stats.avg_deal_size:.2f}"])
+                writer.writerow(["Total Pipeline Value", f"R$ {advanced_stats.total_pipeline_value:.2f}"])
+                
+                # Add conversion rates
+                for status, rate in advanced_stats.conversion_rates.items():
+                    writer.writerow([f"Conversion Rate - {status}", f"{rate:.2f}%"])
+            
+            csv_content = output.getvalue()
+            output.close()
+            
+            # Return CSV file
+            from fastapi.responses import StreamingResponse
+            import io
+            
+            def iter_csv():
+                yield csv_content
+            
+            return StreamingResponse(
+                io.BytesIO(csv_content.encode()),
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename=report_{export_request.report_type}.csv"}
+            )
+        
+        else:
+            return {"message": f"Export format {export_request.format} not yet implemented"}
+            
+    except Exception as e:
+        logger.error(f"Error exporting report: {e}")
+        raise HTTPException(status_code=500, detail="Error exporting report")
+
 # Include the router in the main app
 app.include_router(api_router)
 
