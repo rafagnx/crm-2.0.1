@@ -67,35 +67,19 @@ class CRMBackendTester:
         """Setup authentication for testing"""
         print("\n🔐 Setting up authentication...")
         
-        # Register a test user
-        user_data = {
-            "email": "sarah.johnson@techcorp.com",
-            "name": "Sarah Johnson",
-            "password": "SecurePass123!",
-            "role": "manager"
+        # Setup authentication using admin credentials as specified in the request
+        login_data = {
+            "email": "admin@admin.com",
+            "password": "Rafa040388?"
         }
         
-        response = self.make_request("POST", "/auth/register", user_data)
-        
+        response = self.make_request("POST", "/auth/login", login_data)
         if response and response.status_code == 200:
             data = response.json()
             self.auth_token = data.get("access_token")
             self.user_id = data.get("user", {}).get("id")
-            print(f"✅ Authentication setup successful - User ID: {self.user_id}")
+            print(f"✅ Authentication successful with admin user - User ID: {self.user_id}")
             return True
-        elif response and response.status_code == 400:
-            # User might already exist, try login
-            login_data = {
-                "email": user_data["email"],
-                "password": user_data["password"]
-            }
-            response = self.make_request("POST", "/auth/login", login_data)
-            if response and response.status_code == 200:
-                data = response.json()
-                self.auth_token = data.get("access_token")
-                self.user_id = data.get("user", {}).get("id")
-                print(f"✅ Authentication via login successful - User ID: {self.user_id}")
-                return True
         
         print("❌ Authentication setup failed")
         return False
