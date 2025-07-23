@@ -399,8 +399,8 @@ const Dashboard = () => {
 
       {/* Status Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white rounded-lg p-6 shadow-lg">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Distribuição por Status</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-100 dark:border-gray-700 transition-colors duration-200">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Distribuição por Status</h3>
           <div className="space-y-3">
             {stats?.status_stats && Object.entries(stats.status_stats).map(([status, data]) => {
               const statusLabels = {
@@ -425,13 +425,13 @@ const Dashboard = () => {
                 <div key={status} className="flex items-center justify-between">
                   <div className="flex items-center">
                     <div className={`w-3 h-3 rounded-full ${colors[status]} mr-3`}></div>
-                    <span className="text-sm text-gray-700">{statusLabels[status]}</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{statusLabels[status]}</span>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <span className="text-sm font-medium text-gray-900">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
                       {data.count} leads
                     </span>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
                       {formatCurrency(data.value || 0)}
                     </span>
                   </div>
@@ -441,23 +441,23 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg p-6 shadow-lg">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Atividades Recentes</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-100 dark:border-gray-700 transition-colors duration-200">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Atividades Recentes</h3>
           <div className="space-y-3 max-h-64 overflow-y-auto">
             {stats?.recent_activities?.slice(0, 8).map((activity, index) => (
-              <div key={index} className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded">
+              <div key={index} className="flex items-start space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors duration-200">
                 <div className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-900 truncate">
+                  <p className="text-sm text-gray-900 dark:text-white truncate">
                     {activity.details}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {new Date(activity.timestamp).toLocaleString('pt-BR')}
                   </p>
                 </div>
               </div>
             )) || (
-              <p className="text-gray-500 text-sm">Nenhuma atividade recente</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Nenhuma atividade recente</p>
             )}
           </div>
         </div>
@@ -465,14 +465,14 @@ const Dashboard = () => {
 
       {/* Top Sources */}
       {stats?.top_sources?.length > 0 && (
-        <div className="bg-white rounded-lg p-6 shadow-lg">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Fontes de Leads</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-100 dark:border-gray-700 transition-colors duration-200">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Top Fontes de Leads</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {stats.top_sources.map((source, index) => (
-              <div key={index} className="text-center p-4 border border-gray-200 rounded-lg">
-                <p className="font-medium text-gray-900">{source._id || 'Não informado'}</p>
-                <p className="text-sm text-gray-600">{source.count} leads</p>
-                <p className="text-sm text-green-600">{formatCurrency(source.total_value || 0)}</p>
+              <div key={index} className="text-center p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 transition-colors duration-200">
+                <p className="font-medium text-gray-900 dark:text-white">{source._id || 'Não informado'}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{source.count} leads</p>
+                <p className="text-sm text-green-600 dark:text-green-400">{formatCurrency(source.total_value || 0)}</p>
               </div>
             ))}
           </div>
