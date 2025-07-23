@@ -55,6 +55,8 @@ class CRMBackendTester:
                 response = requests.put(url, json=data, headers=default_headers, timeout=30)
             elif method.upper() == "DELETE":
                 response = requests.delete(url, headers=default_headers, timeout=30)
+            elif method.upper() == "PATCH":
+                response = requests.patch(url, json=data, headers=default_headers, timeout=30)
             
             return response
         except requests.exceptions.RequestException as e:
