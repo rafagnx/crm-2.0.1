@@ -1851,6 +1851,7 @@ const MainDashboard = () => {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'kanban', label: 'Kanban', icon: '📋' },
+    { id: 'reports', label: 'Relatórios', icon: '📈' },
     { id: 'automations', label: 'Automações', icon: '🤖' },
     { id: 'themes', label: 'Temas', icon: '🎨' },
     { id: 'webhooks', label: 'Webhooks', icon: '🔗' },
