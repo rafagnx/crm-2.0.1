@@ -294,46 +294,6 @@ class CalendarEventCreate(BaseModel):
     end_time: datetime
     event_type: EventType
 
-# Notification System Models
-class NotificationType(str, Enum):
-    LEAD_CREATED = "lead_created"
-    LEAD_MOVED = "lead_moved"
-    LEAD_OVERDUE = "lead_overdue"
-    LEAD_HIGH_VALUE = "lead_high_value"
-    TASK_CREATED = "task_created"
-    TASK_OVERDUE = "task_overdue"
-    AUTOMATION_TRIGGERED = "automation_triggered"
-    SYSTEM_ALERT = "system_alert"
-
-class NotificationPriority(str, Enum):
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    URGENT = "urgent"
-
-class Notification(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    user_id: str
-    type: NotificationType
-    priority: NotificationPriority = NotificationPriority.MEDIUM
-    title: str
-    message: str
-    data: Dict = {}  # Extra data (lead_id, etc.)
-    is_read: bool = False
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    read_at: Optional[datetime] = None
-
-class NotificationCreate(BaseModel):
-    user_id: str
-    type: NotificationType
-    priority: NotificationPriority = NotificationPriority.MEDIUM
-    title: str
-    message: str
-    data: Dict = {}
-
-class NotificationUpdate(BaseModel):
-    is_read: Optional[bool] = None
-
 # Theme System Models
 class ThemeColors(BaseModel):
     primary: str = "#3b82f6"  # Blue
